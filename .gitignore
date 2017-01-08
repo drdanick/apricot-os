@@ -1,0 +1,5 @@
+# Vim
+*.swp
+
+# Apricot binaries
+*.bin
