@@ -3,3 +3,6 @@
 
 # Apricot binaries
 *.bin
+
+# Apricot disk images
+*.dsk
