@@ -3,9 +3,9 @@
 ; ==                               ==
 ; ==    PotatOS Display Library    ==
 ; ==                               ==
-; ==          Revision 1           ==
+; ==          Revision 2           ==
 ; ==                               ==
-; ==  (C) 2014  Nick Stones-Havas  ==
+; == (C) 2014-17 Nick Stones-Havas ==
 ; ==                               ==
 ; ==                               ==
 ; ==  Provides routines for        ==
@@ -26,23 +26,14 @@
     PRTout 7
 }
 
+#macro PUTCHAR treg {
+    ASET treg
+    PRTout 7
+}
+
 ; Routine pointers
-.nearptr PUTCHAR
 .nearptr PUTSTR
 .nearptr TTYRESET
-
-; Write a character to the display
-; $a8 - Character to write
-;
-; Volatile registers:
-; $a8
-;
-PUTCHAR:
-    ASET 8
-    PRTout 7
-    
-    ; Return to caller
-    OS_SYSCALL_RET
 
 ; Write a null terminated string to the display
 ; $a8 - memory block containing string
