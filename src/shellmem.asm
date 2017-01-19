@@ -6,7 +6,7 @@
 ; ==                               ==
 ; ==          Revision 1           ==
 ; ==                               ==
-; ==  (C) 2014  Nick Stones-Havas  ==
+; == (C) 2014-17 Nick Stones-Havas ==
 ; ==                               ==
 ; ==                               ==
 ; ==  Provides labels for shell    ==
