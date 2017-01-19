@@ -111,10 +111,6 @@ ASET 0
 AND 0
 ADD 0x03    ; End any previous TTY command
 PRTout 7
-LAl 0x12    ; Clear the screen
-LDal
-PRTout 7
-PRTout 7
 
 ; Prepare to branch to the first loaded segment
 AND 0
