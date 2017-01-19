@@ -1,7 +1,7 @@
 ; asmsyntax=apricos
 ; ===================================
 ; ==                               ==
-; ==     ApricOS shell command     ==
+; ==    ApricotOS shell command    ==
 ; ==           routines            ==
 ; ==                               ==
 ; ==          Revision 1           ==

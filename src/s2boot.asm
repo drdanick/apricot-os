@@ -1,7 +1,7 @@
 ; asmsyntax=apricos
 ; ===================================
 ; ==                               ==
-; ==   Apricos Stage 2 Bootloader  ==
+; ==  ApricotOS Stage 2 Bootloader ==
 ; ==                               ==
 ; ==          Revision 1           ==
 ; ==                               ==
@@ -16,7 +16,7 @@
 ; ==                               ==
 ; ===================================
 ;
-#name "apricosloader"
+#name "apricotosloader"
 #segment 0x00
 
 ; This bootloader will copy itself into the first segment of memory, overwriting the primary 
@@ -216,5 +216,5 @@ STal
 BRnzp
 
 
-MESSAGE: .stringz "Booting ApricOS..."
-WELCOME: .stringz "\nWelcome to ApricOS!"
+MESSAGE: .stringz "Booting ApricotOS..."
+WELCOME: .stringz "\nWelcome to ApricotOS!"

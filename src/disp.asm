@@ -1,7 +1,7 @@
 ; asmsyntax=apricos
 ; ===================================
 ; ==                               ==
-; ==    PotatOS Display Library    ==
+; ==   ApricotOS Display Library   ==
 ; ==                               ==
 ; ==          Revision 2           ==
 ; ==                               ==

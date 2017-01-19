@@ -1,7 +1,7 @@
 ; asmsyntax=apricos
 ; ===================================
 ; ==                               ==
-; ==   Apricos Stage 1 Bootloader  ==
+; ==  ApricotOS Stage 1 Bootloader ==
 ; ==                               ==
 ; ==          Revision 1           ==
 ; ==                               ==

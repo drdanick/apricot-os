@@ -1,7 +1,7 @@
 ; asmsyntax=apricos
 ; ===================================
 ; ==                               ==
-; ==       PotatOS OS Header       ==
+; ==   ApricotOS Standard Header   ==
 ; ==                               ==
 ; ==          Revision 1           ==
 ; ==                               ==

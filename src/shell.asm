@@ -1,7 +1,7 @@
 ; asmsyntax=apricos
 ; ===================================
 ; ==                               ==
-; ==        Apricos shell          ==
+; ==       ApricotOS shell         ==
 ; ==                               ==
 ; ==          Revision 1           ==
 ; ==                               ==
@@ -9,7 +9,7 @@
 ; ==                               ==
 ; ==                               ==
 ; ==  Provides the main user       ==
-; ==  interface for ApricOS.       ==
+; ==  interface for ApricotOS.     ==
 ; ==                               ==
 ; ===================================
 ;

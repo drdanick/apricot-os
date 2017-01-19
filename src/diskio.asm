@@ -1,7 +1,7 @@
 ; asmsyntax=apricos
 ; ===================================
 ; ==                               ==
-; ==    Apricos DiskIO routines    ==
+; ==   ApricotOS DiskIO routines   ==
 ; ==                               ==
 ; ==          Revision 1           ==
 ; ==                               ==

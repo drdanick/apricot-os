@@ -1,7 +1,7 @@
 ; asmsyntax=apricos
 ; ===================================
 ; ==                               ==
-; ==     Apricos Fault Handler     ==
+; ==    ApricotOS Fault Handler    ==
 ; ==                               ==
 ; ==          Revision 1           ==
 ; ==                               ==

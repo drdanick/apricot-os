@@ -1,7 +1,7 @@
 ; asmsyntax=apricos
 ; ===================================
 ; ==                               ==
-; ==    Apricos shell utilities    ==
+; ==   ApricotOS shell utilities   ==
 ; ==                               ==
 ; ==          Revision 1           ==
 ; ==                               ==
@@ -9,7 +9,7 @@
 ; ==                               ==
 ; ==                               ==
 ; ==  Provides utility functions   ==
-; ==  for the ApricOS shell.       ==
+; ==  for the ApricotOS shell.     ==
 ; ==                               ==
 ; ===================================
 ;

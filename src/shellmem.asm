@@ -1,7 +1,8 @@
 ; asmsyntax=apricos
 ; ===================================
 ; ==                               ==
-; ==  Apricos shell storage labels ==
+; ==    ApricotOS shell storage    ==
+; ==            labels             ==
 ; ==                               ==
 ; ==          Revision 1           ==
 ; ==                               ==
@@ -38,5 +39,5 @@ UNKNOWN_CMD: .stringz "BAD COMMAND OR FILENAME\n"
 ;====================
 .padseg 0x00
 
-GREET:       .stringz "ApricOS PIE shell [Version 0.0.1]\n(C) Copyright 2014-2015 Nick Stones-Havas\n"
+GREET:       .stringz "ApricotOS PIE shell [Version 0.0.1]\n(C) Copyright 2014-2017 Nick Stones-Havas\n"
 HI:          .stringz "Hello Sailor...\n"
