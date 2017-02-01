@@ -20,9 +20,11 @@
 
 ; Function pointers
 .nearptr PUSHREGS
+.nearptr PUSHVOLATILEREGS
 .nearptr PUSHALLREGS
 .nearptr PUSHREGSANDCOPY
 .nearptr POPREGS
+.nearptr POPVOLATILEREGS
 .nearptr POPALLREGS
 .nearptr HALT
 
@@ -53,6 +55,36 @@ PUSHREGS:
     ASET 6
     SPUSH
     ASET 7
+    SPUSH
+
+    JMP
+
+;
+; Pushes all volatile registers ($a8-$a15) 
+; to the stack. 
+;
+; Volatile registers:
+; - Currently selected register
+;
+PUSHVOLATILEREGS:
+    ; Place the return address in $mr before pushing anything to the stack
+    OS_SYSCALL_RET_PREP
+
+    ASET 8
+    SPUSH
+    ASET 9
+    SPUSH
+    ASET 10
+    SPUSH
+    ASET 11
+    SPUSH
+    ASET 12
+    SPUSH
+    ASET 13
+    SPUSH
+    ASET 14
+    SPUSH
+    ASET 15
     SPUSH
 
     JMP
@@ -194,6 +226,34 @@ POPREGS:
     ASET 1
     SPOP
     ASET 0
+    SPOP
+
+    JMP
+
+;
+; Pops registers $a8-$a15 from the stack
+;
+; Volatile registers:
+; - Currently selected register
+;
+POPVOLATILEREGS:
+    OS_SYSCALL_RET_PREP
+
+    ASET 15
+    SPOP
+    ASET 14
+    SPOP
+    ASET 13
+    SPOP
+    ASET 12
+    SPOP
+    ASET 11
+    SPOP
+    ASET 10
+    SPOP
+    ASET 9
+    SPOP
+    ASET 8
     SPOP
 
     JMP
