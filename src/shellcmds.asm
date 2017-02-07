@@ -118,12 +118,10 @@ TOUCH_H:
 
 
 HI:
-    LAh SHELLMEM_HI
-    LAl SHELLMEM_HI
     ASET 8
-    LDah
+    LARh SHELLMEM_HI
     ASET 9
-    LDal
+    LARl SHELLMEM_HI
     ASET 10
     OS_SYSCALL LIBDISP_PUTSTR
     SHELLCMD_RET
@@ -150,12 +148,10 @@ CLS:
     AND 0
     ADD 3
     PRTout 7
-    LAl 0x12
-    LDal
+    LARl 0x12
     PRTout 7
     PRTout 7
-    LAl 0x7F
-    LDal
+    LARl 0x7F
     PRTout 7
     AND 0
     PRTout 7
@@ -183,12 +179,10 @@ TOUCH:
 
 ; Anything that jumps here is incomplete
 WIP:
-    LAh FAULT_HANDLER_ERR_SHELL
-    LAl FAULT_HANDLER_ERR_SHELL
     ASET 8
-    LDah
+    LARh FAULT_HANDLER_ERR_SHELL
     ASET 9
-    LDal
+    LARl FAULT_HANDLER_ERR_SHELL
 
     ASET 10
     OS_SYSCALL LIBDISP_PUTSTR
