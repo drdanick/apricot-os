@@ -14,12 +14,14 @@
 ; ===================================
 ;
 #name "diskio"
-#segment 6
+#segment 0x06
 
 #include "potatosinc.asm"
 #include "faulthandler.asm"
 #include "osutil.asm"
 #include "memutil.asm"
+
+; TODO: These routines need to be tested and verified
 
 ; Macro to select a disk track
 ;
@@ -60,13 +62,11 @@ COPYFROMDSK:
 
     ; Check that the segment number is valid by masking out valid range bits
     SPUSH
-    LAl 0x70   ; 0x70 masks away all but the invalid segment number bits. Valid values will mask to 0.
-    LDal
+    LARl 0x70   ; 0x70 masks away all but the invalid segment number bits. Valid values will mask to 0.
     SPOP AND
     BRnp SEGNUM_ERROR
     
-    LAh 0xFE   ; Use $a8 to hold the base address of the disk paging region
-    LDah
+    LARh 0xFE   ; Use $a8 to hold the base address of the disk paging region
 
     ASET 10
     OS_SYSCALL MEMUTIL_SEGCPY
@@ -92,13 +92,11 @@ COPYTODSK:
 
     ; Check that the segment number is valid by masking out valid range bits
     SPUSH      ; We need the segment number in the stack again for this operation
-    LAl 0x70   ; 0x70 masks away all but the invalid segment number bits. Valid values will mask to 0.
-    LDal
+    LARl 0x70   ; 0x70 masks away all but the invalid segment number bits. Valid values will mask to 0.
     SPOP AND
     BRnp SEGNUM_ERROR
     
-    LAh 0xFE   ; Use $a9 to hold the base address of the disk paging region
-    LDah
+    LARh 0xFE   ; Use $a9 to hold the base address of the disk paging region
 
     ASET 10
     OS_SYSCALL MEMUTIL_SEGCPY
@@ -139,7 +137,7 @@ COPYBULKFROMDSK:
         ASET 2
         SPUSH        ; Push twice as we need the original value after this operation
         SPUSH
-        LAl 0x30     ; 0x30 masks out valid track bits
+        LARl 0x30     ; 0x30 masks out valid track bits
         SPOP AND
         BRnp TRACKNUM_ERROR
         SPOP         ; Restore the track number
@@ -173,8 +171,7 @@ COPYBULKFROMDSK:
         SPUSH      ; Push the segment number twice so we can restore it afterwards
         SPUSH
         ASET 10    ; Use $a10 as a temp register for this operation
-        LAl 0x70   ; 0x70 masks away all but the invalid segment number bits. Valid values will mask to 0.
-        LDal
+        LARl 0x70   ; 0x70 masks away all but the invalid segment number bits. Valid values will mask to 0.
         SPOP AND
         ASET 0
         SPOP       ; Restore the segment number
@@ -187,7 +184,7 @@ COPYBULKFROMDSK:
         AND 0
         ASET 2
         ADD 1
-        BRnzp CBFD_COPYLP
+        JMP CBFD_COPYLP
     CBFD_COPYLP_END:
 
     ; Restore the old values of $a0, $a1, $a2, and $a3
@@ -223,7 +220,7 @@ COPYBULKTODSK:
         ASET 2
         SPUSH        ; Push twice as we need the original value after this operation
         SPUSH
-        LAl 0x30     ; 0x30 masks out valid track bits
+        LARl 0x30     ; 0x30 masks out valid track bits
         SPOP AND
         BRnp TRACKNUM_ERROR
         SPOP         ; Restore the track number
@@ -257,8 +254,7 @@ COPYBULKTODSK:
         SPUSH      ; Push the segment number twice so we can restore it afterwards
         SPUSH
         ASET 10    ; Use $a10 as a temp register for this operation
-        LAl 0x70   ; 0x70 masks away all but the invalid segment number bits. Valid values will mask to 0.
-        LDal
+        LARl 0x70   ; 0x70 masks away all but the invalid segment number bits. Valid values will mask to 0.
         SPOP AND
         ASET 0
         SPOP       ; Restore the segment number
@@ -271,7 +267,7 @@ COPYBULKTODSK:
         AND 0
         ASET 2
         ADD 1
-        BRnzp CBTD_COPYLP
+        JMP CBTD_COPYLP
     CBTD_COPYLP_END:
 
     ; Restore the old values of $a0, $a1, $a2, and $a3
@@ -287,13 +283,11 @@ COPYBULKTODSK:
 ; Handle track number errors
 TRACKNUM_ERROR:
     ASET 8
-    LAl 0x02
-    LDal
+    LARl 0x02
     OS_SYSJUMP FAULT_HANDLER_PRINTERR 
 
 ; Handle segment number errors
 SEGNUM_ERROR:
     ASET 8
-    LAl 0x03
-    LDal
+    LARl 0x03
     OS_SYSJUMP FAULT_HANDLER_PRINTERR 
