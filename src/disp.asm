@@ -21,8 +21,7 @@
 
 #macro TTY_MODE mode treg {
     ASET treg
-    LAl mode
-    LDal
+    LARl mode
     PRTout 7
 }
 
@@ -58,7 +57,7 @@ PUTSTR:
         ASET 9
         ADD 1
         STal
-        BRnzp PRINT_LOOP
+        JMP PRINT_LOOP
     PRINT_END:
 
     ; Return to caller
@@ -78,17 +77,15 @@ TTYRESET:
     ADD 3
     PRTout 7   ; End any previous TTY command
 
-    LAh 0x12   ; CLS
-    LAl 0x10   ; Cursor disable
 
     ; Disable the cursor
-    LDal
+    LARl 0x10   ; Cursor disable
     PRTout 7
     AND 0
     PRTout 7
 
     ; Clear the screen
-    LDah
+    LARl 0x12   ; CLS
     PRTout 7
     PRTout 7
 
