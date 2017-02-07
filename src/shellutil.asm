@@ -34,13 +34,10 @@
 ; $a10
 ;
 PRINTPROMPT:
-    LAh SHELLMEM_PROMPT
-    LAl SHELLMEM_PROMPT
-
     ASET 8
-    LDah
+    LARh SHELLMEM_PROMPT
     ASET 9
-    LDal
+    LARl SHELLMEM_PROMPT
 
     ASET 10
     OS_SYSCALL LIBDISP_PUTSTR
@@ -77,8 +74,7 @@ READLINE:
     AND 0
     ADD 3
     PRTout 7
-    LAl 0x7F
-    LDal
+    LARl 0x7F
     PRTout 7
     AND 0
     PRTout 7
@@ -86,44 +82,35 @@ READLINE:
 
     ; Set up constant values in registers
     ASET 0
-    LAl 0x60  ; Mask to check for valid printable characters
-    LDal
+    LARl 0x60  ; Mask to check for valid printable characters
 
     ASET 1
-    LAl 0x20  ; Uppercase/lowercase toggle bit
-    LDal
+    LARl 0x20  ; Uppercase/lowercase toggle bit
 
     ASET 2
-    LAl 0x41  ; ASCII encoding of 'A'
-    LDal
+    LARl 0x41  ; ASCII encoding of 'A'
     NOT       ; Negate this value
     ADD 1
 
     ASET 3
-    LAl 0x5A  ; ASCII encoding of 'Z'
-    LDal
+    LARl 0x5A  ; ASCII encoding of 'Z'
     NOT       ; Negate this value
     ADD 1
 
     ASET 4
-    LAl 0x0A  ; ASCII linefeed
-    LDal
+    LARl 0x0A  ; ASCII linefeed
 
     ASET 5
-    LAl 0x08  ; ASCII backspace
-    LDal
+    LARl 0x08  ; ASCII backspace
 
     ASET 6
-    LAl 0x7F  ; ASCII delete
-    LDal
+    LARl 0x7F  ; ASCII delete
 
     ASET 7
-    LAl 0xFF  ; -1
-    LDal
+    LARl 0xFF  ; -1
 
     ASET 9    ; $a9 points to the address directly following the buffer
-    LAl SHELLMEM_CMDBUFFEND
-    LDal
+    LARl SHELLMEM_CMDBUFFEND
 
     LAh SHELLMEM_CMDBUFF
     LAl SHELLMEM_CMDBUFF
@@ -241,7 +228,7 @@ READLINE:
         ASET 10
         SPOP
         ASET 8
-        BRnzp SAVE_CHAR
+        JMP SAVE_CHAR
 
         NOT_ALPHA_CHAR:
         ASET 8  ; Restore the old character value
@@ -265,7 +252,7 @@ READLINE:
         ASET 15
         ADD 1
 
-        BRnzp RL_LOOP_START
+        JMP RL_LOOP_START
         DO_BACKSPACE:
         SPOP
         ASET 15
@@ -285,7 +272,7 @@ READLINE:
         ASET 5
         PRTout 7
 
-        BRnzp RL_LOOP_START
+        JMP RL_LOOP_START
         DO_NEWLINE:
         ASET 4
         PRTout 7
@@ -305,8 +292,7 @@ READLINE:
 
     ; Set the remaining return values
     ASET 14
-    LAl SHELLMEM_CMDBUFF
-    LDal
+    LARl SHELLMEM_CMDBUFF
 
     ASET 8
     OS_SYSCALL OSUTIL_POPREGS
