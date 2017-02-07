@@ -142,7 +142,7 @@ MEMCPY:
 
         ASET 12          ; Decrement the counter
         ADD 1
-        BRnzp MEMCPYLP
+        JMP MEMCPYLP
     MEMCPYLP_END:
 
     OS_SYSCALL_RET
@@ -266,7 +266,7 @@ MEMCMP:
 
         ASET 12
         ADD 1
-        BRnzp MEMCMP_LP
+        JMP MEMCMP_LP
     MEMCMP_LP_END_NEQ:
     ASET 13
     AND 0
@@ -294,8 +294,7 @@ MEMCMP:
 ;
 STRLEN:
     ASET 13
-    LAl 0xFF  ; Initialize the return value as -1 (since we always increment this regardless of whether it is an empty string)
-    LDal
+    LARl 0xFF  ; Initialize the return value as -1 (since we always increment this regardless of whether it is an empty string)
 
     ASET 8
     STah
