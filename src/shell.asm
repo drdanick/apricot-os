@@ -33,8 +33,7 @@ MAIN:
     OS_SYSCALL LIBDISP_TTYRESET
 
     ; Put the TTY into character line mode
-    LAl 0x7F
-    LDal
+    LARl 0x7F
     PRTout 7
     AND 0
     PRTout 7
@@ -42,12 +41,10 @@ MAIN:
 
 
     ; Print the greeting
-    LAh SHELLMEM_GREET 
-    LAl SHELLMEM_GREET 
     ASET 8
-    LDah
+    LARh SHELLMEM_GREET 
     ASET 9
-    LDal
+    LARl SHELLMEM_GREET 
     ASET 10
     OS_SYSCALL LIBDISP_PUTSTR
 
@@ -65,22 +62,19 @@ SHELL_RUN:
     AND 0
     ADD 3
     PRTout 7
-    LAl 0x10
-    LDal
+    LARl 0x10
     PRTout 7
     PRTout 7
     OS_SYSCALL SHELLUTIL_READLINE
 
     ; Disable the cursor
-    LAl 0x10
-    LDal
+    LARl 0x10
     PRTout 7
     AND 0
     PRTout 7
 
     ; Reenable line mode
-    LAl 0x7F
-    LDal
+    LARl 0x7F
     PRTout 7
     AND 0
     PRTout 7
@@ -90,8 +84,7 @@ SHELL_RUN:
     BRz SHELL_RUN
 
     ASET 11   ; Hold the constant value of -32 (ASCII space)
-    LAl 224
-    LDal
+    LARl 224
 
     ASET 13
     STah
@@ -150,11 +143,9 @@ SHELL_RUN:
 EXECUTE_COMMAND:
     ; Prepare a return address for command functions to jump back to
     ASET 1
-    LAh SHELL_RUN
-    LAl SHELL_RUN
-    LDah
+    LARh SHELL_RUN
     SPUSH
-    LDal
+    LARl SHELL_RUN
     SPUSH
 
     ; Loop through the command header array and check if the inputted command is any of those
@@ -209,12 +200,10 @@ EXECUTE_COMMAND:
     ; Command is not a shell command
     ; In the future, the filesystem will be checked for a program
     ; with the given name. For now, just print an error.
-    LAh SHELLMEM_UNKNOWN_CMD
-    LAl SHELLMEM_UNKNOWN_CMD
     ASET 8
-    LDah
+    LARh SHELLMEM_UNKNOWN_CMD
     ASET 9
-    LDal
+    LARl SHELLMEM_UNKNOWN_CMD
     ASET 10
     OS_SYSCALL LIBDISP_PUTSTR
 
