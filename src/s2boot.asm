@@ -25,7 +25,7 @@
 
 
 
-; The TTY should have been reset by the main bootloader, but to be certian,
+; The TTY should have been reset by the main bootloader, but to be certain,
 ; reset it anyway.
 ASET 0
 AND 0
@@ -34,7 +34,7 @@ PRTout 7
 
 LAl PHASE1_MARKER
 PHASE2_MARKER:  ; Marks the branch that should be NOPd during the second phase of booting
-BRnzp
+JMP
 
 ;=========================================
 ;==                                     ==
@@ -43,12 +43,10 @@ BRnzp
 ;=========================================
 
 ASET 5   ; Use $a5 to hold the base address of the disk paging region
-LAh 0xFE
-LDah
+LARh 0xFE
 
 ASET 1     ; Use $a1 to store the value of -61 (negative number of sectors we want to load)
-LAl 195    ; On a signed 8-bit machine, this is equivalent to -61.
-LDal
+LARl 195   ; On a signed 8-bit machine, this is equivalent to -61.
 ASET 0     ; Use $a0 to store the sector currently being read from disk (the block being written to is this)
 AND 0
 LOADER_COPY_LOOP:
@@ -74,8 +72,7 @@ LOADER_COPY_LOOP:
     ADD 1
 BRnp LOADER_COPY_LOOP
 
-LAl 0x7F    ; Enable repeat mode
-LDal
+LARl 0x7F    ; Enable repeat mode
 PRTout 7
 AND 0       ; Enable repeat mode on character output
 PRTout 7
@@ -98,8 +95,7 @@ WELCOME_LOOP_END:
 SPOP
 
 ; Sleep for 3 seconds
-LAl 100
-LDal
+LARl 100
 
 ; Port 0 sleeps for 10 * $a, so write to it 3 times for 3 seconds
 PRTout 0
@@ -137,7 +133,7 @@ AND 0
 
 ; Select $a0 and branch to the first loaded segment
 ASET 0
-BRnzp
+JMP
 
 
 
@@ -152,18 +148,15 @@ PHASE1_MARKER:  ; Marks code only executed during the first phase of booting
 ; NOTE: $a0 is still selected at this point.
 
 ; Print the booting message
-LAl 0x12    ; Clear the screen
-LDal
+LARl 0x12    ; Clear the screen
 PRTout 7
 PRTout 7
-LAl 0x7F    ; Enable repeat mode
-LDal
+LARl 0x7F    ; Enable repeat mode
 PRTout 7
 AND 0       ; Enable repeat mode on character output
 PRTout 7
 
-LAl MESSAGE
-LDal
+LARl MESSAGE
 ; Loop until the null character is read
 MSG_LOOP:
     STal
