@@ -13,7 +13,7 @@
 ; ===================================
 ;
 #name "FAULT_HANDLER"
-#segment 0x02
+#segment 2
 
 #include "potatosinc.asm"
 #include "osutil.asm"

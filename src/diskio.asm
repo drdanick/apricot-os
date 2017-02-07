@@ -14,7 +14,7 @@
 ; ===================================
 ;
 #name "diskio"
-#segment 0x06
+#segment 6
 
 #include "potatosinc.asm"
 #include "faulthandler.asm"

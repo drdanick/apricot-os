@@ -14,7 +14,7 @@
 ; ===================================
 ;
 #name "osutil"
-#segment 0x04
+#segment 4
 
 #include "potatosinc.asm"
 

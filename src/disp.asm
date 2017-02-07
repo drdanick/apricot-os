@@ -15,7 +15,7 @@
 ; ===================================
 ;
 #name "libdisp"
-#segment 0x07
+#segment 7
 
 #include "potatosinc.asm"
 

@@ -15,7 +15,7 @@
 ; ===================================
 ;
 #name "memutil"
-#segment 0x05
+#segment 5
 
 #include "potatosinc.asm"
 

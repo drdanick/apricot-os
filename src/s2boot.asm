@@ -17,7 +17,7 @@
 ; ===================================
 ;
 #name "apricotosloader"
-#segment 0x00
+#segment 0
 
 ; This bootloader will copy itself into the first segment of memory, overwriting the primary 
 ; stage 1 bootloader. Afterwhich, the copied loader will be modified to load the rest of the OS 
