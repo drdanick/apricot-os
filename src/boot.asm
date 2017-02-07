@@ -33,16 +33,14 @@
 ; Alters $mar
 #macro CLS treg {
     ASET treg
-    LAl 0x12
-    LDal
+    LARl 0x12
     PRTout 7
     PRTout 7
 }
 
 #macro TTY_MODE mode treg {
     ASET treg
-    LAl mode
-    LDal
+    LARl mode
     PRTout 7
 }
 
@@ -58,8 +56,7 @@ CLS 0           ; Clear screen
 
 ; Use $a14 to hold the sleep period (we will use 1000ms, so $a14 must hold 100)
 ASET 14
-LAl 100      ; This trick can be used to load larger numbers into registers
-LDal
+LARl 100
 
 ; Select first disk and try to read.
 ; Give up on 3rd attempt and print error
@@ -91,9 +88,8 @@ ADD 1
 BRnz LOAD_DISK
 ; If counter is positive, print an error and halt.
 ASET 8
-LAl DISK_READ_ERROR
-LDal
-BRnzp PRINT_ERROR
+LARl DISK_READ_ERROR
+JMP PRINT_ERROR
 
 ; Check that the disk is bootable
 CHECK_DISK:
@@ -107,8 +103,7 @@ LAh 0xFE   ; Use $a15 to hold the base address of the disk paging region
 LDah
 
 ASET 0     ; Use $a0 to hold the disk segment number we want to read
-LAl 0x3E
-LDal
+LARl 0x3E
 
 ; Load sector 0x3E
 PRTout 0x05
@@ -132,9 +127,8 @@ BRz COPY_LOADER
 
 ; Disk is not bootable
 ASET 8
-LAl DISK_FORMAT_ERROR
-LDal
-BRnzp PRINT_ERROR
+LARl DISK_FORMAT_ERROR
+JMP PRINT_ERROR
 
 ; Disk is bootable. Copy the first 128 sectors into memory.
 COPY_LOADER:
@@ -143,9 +137,8 @@ COPY_LOADER:
 ASET 9   ; We need to print this value before every character
 AND 0
 ASET 8
-LAl LOADING
+LARl LOADING
 LAh LOADING
-LDal
 PRINT_LOAD_MSG:
     STal
     SPUSH
@@ -157,7 +150,7 @@ PRINT_LOAD_MSG:
     PRTout 0x07
     SPOP
     ADD 1
-    BRnzp PRINT_LOAD_MSG
+    JMP PRINT_LOAD_MSG
 PRINT_LOAD_MSG_END:
 SPOP
     
@@ -165,8 +158,7 @@ SPOP
 
 
 ASET 1     ; Use $a1 to store the value of -4 (negative number of sectors we want to load)
-LAl 252    ; On a signed 8-bit machine, this is equivalent to -4.
-LDal
+LARl 252    ; On a signed 8-bit machine, this is equivalent to -4.
 ASET 0     ; Use $a0 to store the sector currently being read from disk (the block being written to is this + 1)
 AND 0
 LOADER_COPY_LOOP:
@@ -229,7 +221,7 @@ AND 0
 
 ; Jump to first loaded segment
 ;PRTin 4
-BRnzp
+JMP
     
     
 
@@ -241,8 +233,7 @@ BRnzp
 PRINT_ERROR:
     ; Write 0x7F to the TTY in order to enable line mode
     ASET 15 
-    LAl 0x7F
-    LDal
+    LARl 0x7F
     PRTout 0x07
     AND 0
     STah   ; Make sure we have the right segment address
@@ -257,7 +248,7 @@ PRINT_ERROR:
         PRTout 0x07
         SPOP
         ADD 1
-        BRnzp PRINT_LOOP
+        JMP PRINT_LOOP
     PRINT_END:
     ; Disable TTY line mode
     ASET 15 
@@ -269,7 +260,7 @@ PRINT_ERROR:
     ASET 14
     HALT:
     PRTout 0x00
-    BRnzp HALT
+    JMP HALT
 
     
 
