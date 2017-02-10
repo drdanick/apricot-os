@@ -11,17 +11,19 @@
 ; ==  Provides routines for        ==
 ; ==  basic arithmetic.            ==
 ; ==                               ==
-; ==                               ==
 ; ===================================
 ;
 #name "libmath"
 #segment 20 ; TODO: Pick a more appropriate segment number
 
 #include "potatosinc.asm"
+#include "osutil.asm"
+#include "memutil.asm"
 
 ; Routine pointers
 .nearptr MULT
-.nearptr ATOI
+.nearptr ATOB
+.nearptr HTOI
 
 ; Multiply two numbers together
 ; $a8 - the first operand to multiply
@@ -59,7 +61,7 @@ MULT:
 
         ASET 9
         ADD 1
-        BRnzp MULT_LOOP_START
+        JMP MULT_LOOP_START
     MULT_LOOP_END:
 
     OS_SYSCALL_RET
@@ -75,5 +77,151 @@ MULT:
 ;
 ; Volatile registers:
 ; 
-ATOI:
+ATOB:
+    ; TODO
     OS_SYSCALL_RET
+
+; Convert a string of hex characters to a 16 bit integer.
+; Note that no bounds checking is done.
+; $a8 - Segment number of hex string in memory
+; $a9 - Segment local address of hex string in memory
+;
+; Outputs:
+; $a10 - Most significant byte of output number
+; $a11 - Least significant byte of output number
+;
+; Volatile registers:
+; $a9
+; $a12
+; $a13
+; $a14
+;
+HTOI:
+    ; Zero hex bytes storage
+    LAh TEMP_HEX_BYTES
+    LAl TEMP_HEX_BYTES
+    ASET 10
+    LDal
+    ASET 11
+    AND 0
+    ST
+    ASET 10
+    ADD 1
+    STal
+    ASET 11
+    ST
+    ASET 10
+    ADD 1
+    STal
+    ASET 11
+    ST
+    ASET 10
+    ADD 1
+    STal
+    ASET 11
+    ST
+
+    ASET 13   ; Zero the character counter
+    AND 0
+
+    ASET 14   ; Store negative value of '0' (to subtract from each hex character) 
+    LAR 0x30  ; ASCII encoding of '0'
+    NOT       ; Negate this value
+    ADD 1
+
+    ASET 8    ; Set segment address of next hex digit to load
+    STah
+
+    HTOI_READ_LOOP:
+        ASET 9   ; Segment local address of next hex digit
+        STal
+        ADD 1
+
+        ASET 12  ; Store next hex digit in $a12
+        LD
+
+        ; If the digit is zero, skip to the processing phase...
+        BRz HTOI_READ_LOOP_END
+
+        ; ...otherwise, convert it to its integer representation, push it onto the stack, and increment the character read counter
+        ASET 14
+        SPUSH
+        ASET 12
+        SPOP ADD
+
+        SPUSH
+
+        ASET 13
+        ADD 1
+
+        JMP HTOI_READ_LOOP ; Move on to the next character
+    HTOI_READ_LOOP_END:
+    
+    ASET 14 ; Store the value of -1 in $a14
+    LAR 0xFF
+
+    ; Set up $mar with the address of the last digit of hex storage
+    LAh TEMP_HEX_BYTES
+    ASET 11
+    LARl TEMP_HEX_BYTES
+    ADD 3
+    STal
+
+    ; Pop digits from the stack and put them in memory
+    HTOI_STACK_TO_MEM_LOOP:
+        ASET 13
+        BRnz HTOI_STACK_TO_MEM_LOOP_END  ; Finish if our character counter is zero
+        ASET 14  ; Derement the character counter
+        SPUSH
+        SPUSH    ; This second push is for the hex address decrement
+        ASET 13
+        SPOP ADD
+
+        ASET 11  ; Decrement the hex array local address (dont store it into $mar yet)
+        SPOP ADD
+
+        ASET 12 ; Pop the next digit into $a12
+        SPOP
+        ST      ; Store it to the end of the hex array
+
+        ASET 11 ; Set the address of the next storage position into $mar
+        STal
+
+        JMP HTOI_STACK_TO_MEM_LOOP ; Continue with loop
+    HTOI_STACK_TO_MEM_LOOP_END:
+
+    ASET 12
+    LARl TEMP_HEX_BYTES
+    STal
+
+    ; Load the most significant byte
+    ASET 10
+    LD
+    SHFl 4
+    SPUSH
+    ASET 12
+    ADD 1
+    STal
+    ASET 10
+    LD
+    SPOP OR
+
+    ; Load the least significant byte
+    ASET 12
+    ADD 1
+    STal
+    ASET 11
+    LD
+    SHFl 4
+    SPUSH
+    ASET 12
+    ADD 1
+    STal
+    ASET 11
+    LD
+    SPOP OR
+
+    OS_SYSCALL_RET
+
+
+TEMP_HEX_BYTES: .blockw 4 0  ; Temporary storage for hex->integer conversion
