@@ -42,9 +42,9 @@ MAIN:
 
     ; Print the greeting
     ASET 8
-    LARh SHELLMEM_GREET 
+    LARh SHELLMEM_GREET
     ASET 9
-    LARl SHELLMEM_GREET 
+    LARl SHELLMEM_GREET
     ASET 10
     OS_SYSCALL LIBDISP_PUTSTR
 
@@ -56,7 +56,7 @@ MAIN:
 
 ; Main shell routine
 SHELL_RUN:
-    OS_SYSCALL SHELLUTIL_PRINTPROMPT 
+    OS_SYSCALL SHELLUTIL_PRINTPROMPT
 
     ; Enable the cursor
     AND 0
@@ -107,7 +107,7 @@ SHELL_RUN:
         ASET 12
         SPOP ADD
         BRnp NOMARK
-        
+
         MARK:
             ASET 11
             AND 0
@@ -170,7 +170,7 @@ EXECUTE_COMMAND:
         STal
         LD
         SPUSH
-        
+
         ; Get the address of the command string
         ASET 10
         LDah
