@@ -6,3 +6,6 @@
 
 # Apricot disk images
 *.dsk
+
+# Apricot symbols files
+*.sym
