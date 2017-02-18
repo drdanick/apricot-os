@@ -21,6 +21,7 @@
 #include "faulthandler.asm"
 #include "disp.asm"
 #include "shellmem.asm"
+#include "math.asm"
 
 #macro SHELLCMD_RET {
     SPOP
@@ -51,6 +52,7 @@ CMD_ARRAY:
 .nearptr CAT_H
 .nearptr ECHO_H
 .nearptr TOUCH_H
+.nearptr MEMEXEC_H
 .fill 0
 
 
@@ -102,6 +104,10 @@ ECHO_H:
 TOUCH_H:
 .farptr TOUCH
 .stringz "TOUCH"
+
+MEMEXEC_H:
+.farptr MEMEXEC
+.stringz "MEMEXEC"
 
 
 
@@ -175,6 +181,36 @@ ECHO:
 
 TOUCH:
     OS_SYSJUMP WIP
+
+MEMEXEC:
+    ASET 8
+    SPUSH
+    LARh SHELLMEM_CMDBUFF
+    ASET 9
+    SPOP
+
+    POTATO:
+    ASET 10
+    OS_SYSCALL LIBMATH_HTOI
+
+    POOP:
+    ; Jump the the user-entered address
+    ASET 12
+    LDI PROGRAM_RETURN
+    LDah
+    SPUSH
+    LDal
+    SPUSH
+
+    ASET 10
+    STah
+    ASET 11
+    STal
+
+    JMP
+
+    PROGRAM_RETURN:
+    SHELLCMD_RET
 
 
 ; Anything that jumps here is incomplete
