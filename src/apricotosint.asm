@@ -10,7 +10,7 @@
 ; ==                               ==
 ; == Provides standard labels and  ==
 ; == macros for programs running   ==
-; == under PotatOS                 ==
+; == under ApricotOS.              ==
 ; ==                               ==
 ; ===================================
 ;
