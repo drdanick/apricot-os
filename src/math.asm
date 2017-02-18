@@ -14,7 +14,7 @@
 ; ===================================
 ;
 #name "libmath"
-#segment 20 ; TODO: Pick a more appropriate segment number
+#segment 9 ; TODO: Pick a more appropriate segment number
 
 #include "potatosinc.asm"
 #include "osutil.asm"
@@ -95,6 +95,7 @@ ATOB:
 ; $a12
 ; $a13
 ; $a14
+; $a15
 ;
 HTOI:
     ; Zero hex bytes storage
@@ -129,10 +130,12 @@ HTOI:
     NOT       ; Negate this value
     ADD 1
 
-    ASET 8    ; Set segment address of next hex digit to load
-    STah
+    ASET 15 ; Store the local address of the hex table in $a15
+    LARl HEX_TABLE
 
     HTOI_READ_LOOP:
+        ASET 8   ; Set segment address of next hex digit to load
+        STah
         ASET 9   ; Segment local address of next hex digit
         STal
         ADD 1
@@ -143,12 +146,22 @@ HTOI:
         ; If the digit is zero, skip to the processing phase...
         BRz HTOI_READ_LOOP_END
 
-        ; ...otherwise, convert it to its integer representation, push it onto the stack, and increment the character read counter
+        ; ...otherwise, convert it to its integer representation...
         ASET 14
         SPUSH
         ASET 12
         SPOP ADD
 
+        ; ...then convert the number to an index in the hex lookup table by adding the table's base address...
+        ASET 15
+        SPUSH
+        ASET 12
+        SPOP ADD
+
+        ;...and finally, get the value in the table at the calculated index, push it to the stack, and increment the character read counter.
+        STal
+        LAh HEX_TABLE
+        LD
         SPUSH
 
         ASET 13
@@ -221,7 +234,33 @@ HTOI:
     LD
     SPOP OR
 
+    ASET 12
     OS_SYSCALL_RET
 
 
 TEMP_HEX_BYTES: .blockw 4 0  ; Temporary storage for hex->integer conversion
+
+HEX_TABLE:
+.fill 0   ; 0
+.fill 1   ; 1
+.fill 2   ; 2
+.fill 3   ; 3
+.fill 4   ; 4
+.fill 5   ; 5
+.fill 6   ; 6
+.fill 7   ; 7
+.fill 8   ; 8
+.fill 9   ; 9
+.fill 0   ; :
+.fill 0   ; ;
+.fill 0   ; <
+.fill 0   ; =
+.fill 0   ; >
+.fill 0   ; ?
+.fill 0   ; @
+.fill 10  ; A
+.fill 11  ; B
+.fill 12  ; C
+.fill 13  ; D
+.fill 14  ; E
+.fill 15  ; F
