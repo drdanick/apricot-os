@@ -189,11 +189,9 @@ MEMEXEC:
     ASET 9
     SPOP
 
-    POTATO:
     ASET 10
     OS_SYSCALL LIBMATH_HTOI
 
-    POOP:
     ; Jump the the user-entered address
     ASET 12
     LDI PROGRAM_RETURN
