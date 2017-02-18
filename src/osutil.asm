@@ -16,7 +16,7 @@
 #name "osutil"
 #segment 4
 
-#include "potatosinc.asm"
+#include "apricotosint.asm"
 
 ; Function pointers
 .nearptr PUSHREGS

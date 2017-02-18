@@ -16,7 +16,7 @@
 #name "shell"
 #segment 14
 
-#include "potatosinc.asm"
+#include "apricotosint.asm"
 #include "shellutil.asm"
 #include "shellmem.asm"
 #include "shellcmds.asm"

@@ -16,7 +16,7 @@
 #name "diskio"
 #segment 0x06
 
-#include "potatosinc.asm"
+#include "apricotosint.asm"
 #include "faulthandler.asm"
 #include "osutil.asm"
 #include "memutil.asm"

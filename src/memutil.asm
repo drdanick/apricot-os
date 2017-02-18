@@ -17,7 +17,7 @@
 #name "memutil"
 #segment 5
 
-#include "potatosinc.asm"
+#include "apricotosint.asm"
 
 ; Commented out to allow this code to assemble (it would cross a segment boundary otherwise)
 ; Function pointers

@@ -17,7 +17,7 @@
 #name "shellcmds"
 #segment 13
 
-#include "potatosinc.asm"
+#include "apricotosint.asm"
 #include "faulthandler.asm"
 #include "disp.asm"
 #include "shellmem.asm"

@@ -16,7 +16,7 @@
 #name "libmath"
 #segment 9 ; TODO: Pick a more appropriate segment number
 
-#include "potatosinc.asm"
+#include "apricotosint.asm"
 #include "osutil.asm"
 #include "memutil.asm"
 

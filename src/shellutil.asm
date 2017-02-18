@@ -16,7 +16,7 @@
 #name "shellutil"
 #segment 12
 
-#include "potatosinc.asm"
+#include "apricotosint.asm"
 #include "shellmem.asm"
 #include "shellcmds.asm"
 #include "disp.asm"

@@ -16,8 +16,6 @@
 ;
 #name "OS"
 
-NOP
-
 ; Macro for library function calls
 ;
 ; Arguments:

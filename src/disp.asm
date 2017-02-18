@@ -17,7 +17,7 @@
 #name "libdisp"
 #segment 7
 
-#include "potatosinc.asm"
+#include "apricotosint.asm"
 
 #macro TTY_MODE mode treg {
     ASET treg

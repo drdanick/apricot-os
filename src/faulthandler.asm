@@ -15,7 +15,7 @@
 #name "FAULT_HANDLER"
 #segment 2
 
-#include "potatosinc.asm"
+#include "apricotosint.asm"
 #include "osutil.asm"
 #include "disp.asm"
 

@@ -18,7 +18,7 @@
 #name "osinit"
 
 #include "shell.asm"
-#include "potatosinc.asm"
+#include "apricotosint.asm"
 
 ; Execute the shell
 OS_SYSCALL SHELL_MAIN
