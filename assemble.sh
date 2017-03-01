@@ -1,11 +1,16 @@
 #!/bin/sh
 
+#
+# NOTE: This script must be run from the project root!
+#
+
 APRICOSASM_CMD="java -jar ${PWD}/apricosasm.jar"
+PROJECT_ROOT=$PWD
 
 mkdir build
 pushd src
 
-$APRICOSASM_CMD ../src/boot.asm && mv -f boot.bin ../build/
+$APRICOSASM_CMD boot.asm && mv -f boot.bin ${PROJECT_ROOT}/build/
 
 $APRICOSASM_CMD -lds \
     diskio.asm \
@@ -21,6 +26,6 @@ $APRICOSASM_CMD -lds \
     osinit.asm \
     math.asm \
     testprogram.asm \
-    && mv -f link.bin ../build/0.dsk && mv -f symbols.sym ../build/
+    && mv -f link.bin ${PROJECT_ROOT}/build/0.dsk && mv -f symbols.sym ${PROJECT_ROOT}/build/
 
 popd
