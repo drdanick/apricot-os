@@ -9,3 +9,9 @@
 
 # Apricot symbols files
 *.sym
+
+# Build directory
+build/
+
+# Apricos assembler
+apricosasm.jar
