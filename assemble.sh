@@ -4,6 +4,10 @@
 # NOTE: This script must be run from the project root!
 #
 
+
+# The Apricos Assembler jar must be placed in the project root.
+# It can be obtained from https://github.com/drdanick/apricosasm-java/releases
+#
 APRICOSASM_CMD="java -jar ${PWD}/apricosasm.jar"
 PROJECT_ROOT=$PWD
 
