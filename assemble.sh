@@ -29,6 +29,8 @@ $APRICOSASM_CMD -lds \
     shellutil.asm \
     osinit.asm \
     math.asm \
+    fsdriver.asm \
+    fsmem.asm \
     testprogram.asm \
     && mv -f link.bin ${PROJECT_ROOT}/build/0.dsk && mv -f symbols.sym ${PROJECT_ROOT}/build/
 

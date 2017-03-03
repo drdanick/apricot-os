@@ -37,10 +37,10 @@ x0C  |  12 | Shell memory allocations
 x0D  |  13 | Shell utilities
 x0E  |  14 | Shell command code
 x0F  |  15 | Shell main code
-x10  |  16 |
+x10  |  16 | Filesystem driver
 x11  |  17 |
-x12  |  18 |
-x13  |  19 |
+x12  |  18 | Filesystem volume information paging area
+x13  |  19 | Filesystem bitmap paging area
 x14  |  20 |
 x15  |  21 |
 x16  |  22 |
