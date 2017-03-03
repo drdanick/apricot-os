@@ -14,7 +14,7 @@
 ; ===================================
 ;
 #name "diskio"
-#segment 0x06
+#segment 6
 
 #include "apricotosint.asm"
 #include "faulthandler.asm"
@@ -27,13 +27,12 @@
 ;
 ; Arguments:
 ; track - The track number to select
-; 
+;
 ; Notes:
-; The currently selected accumulator is used 
+; The currently selected accumulator is used
 ; as temporary storage.
 #macro TRACKSEL track {
-    AND 0
-    ADD track
+    LARl track
     PRTout 0x04
 }
 
@@ -45,7 +44,7 @@
 
 
 ;
-; Copies a segment from the currently selected track 
+; Copies a segment from the currently selected track
 ; into memory.
 ; $a8 - The source disk segment number
 ; $a9 - The destination memory segment number
@@ -65,7 +64,7 @@ COPYFROMDSK:
     LARl 0x70   ; 0x70 masks away all but the invalid segment number bits. Valid values will mask to 0.
     SPOP AND
     BRnp SEGNUM_ERROR
-    
+
     LARh 0xFE   ; Use $a8 to hold the base address of the disk paging region
 
     ASET 10
@@ -75,8 +74,8 @@ COPYFROMDSK:
 
 
 ;
-; Copies a segment of memory into a given segment of 
-; the currently selected disk track. 
+; Copies a segment of memory into a given segment of
+; the currently selected disk track.
 ; $a8 - The source memory segment number
 ; $a9 - The destination disk segment number
 ;
@@ -95,21 +94,21 @@ COPYTODSK:
     LARl 0x70   ; 0x70 masks away all but the invalid segment number bits. Valid values will mask to 0.
     SPOP AND
     BRnp SEGNUM_ERROR
-    
+
     LARh 0xFE   ; Use $a9 to hold the base address of the disk paging region
 
     ASET 10
     OS_SYSCALL MEMUTIL_SEGCPY
-    
+
     ; Write the data back to disk at the given segment
     SPOP
     PRTout 0x06
-    
+
     OS_SYSCALL_RET
 
 
 ;
-; Copies a series of disk segments into memory 
+; Copies a series of disk segments into memory
 ; starting from a given track and segment number.
 ; $a8  - The source disk segment number
 ; $a9  - The destination memory segment number
@@ -147,7 +146,7 @@ COPYBULKFROMDSK:
         ASET 3
         BRz CBFD_COPYLP_END
         ADD 1
-        
+
         ; Set up $a8 and $a9
         ASET 0
         SPUSH
@@ -230,7 +229,7 @@ COPYBULKTODSK:
         ASET 3
         BRz CBTD_COPYLP_END
         ADD 1
-        
+
         ; Set up $a8 and $a9
         ASET 0
         SPUSH
@@ -284,10 +283,10 @@ COPYBULKTODSK:
 TRACKNUM_ERROR:
     ASET 8
     LARl 0x02
-    OS_SYSJUMP FAULT_HANDLER_PRINTERR 
+    OS_SYSJUMP FAULT_HANDLER_PRINTERR
 
 ; Handle segment number errors
 SEGNUM_ERROR:
     ASET 8
     LARl 0x03
-    OS_SYSJUMP FAULT_HANDLER_PRINTERR 
+    OS_SYSJUMP FAULT_HANDLER_PRINTERR
