@@ -10,11 +10,12 @@
 #
 APRICOSASM_CMD="java -jar ${PWD}/apricosasm.jar"
 PROJECT_ROOT=$PWD
+BUILD_DIR="${PROJECT_ROOT}/build"
 
-mkdir build
+mkdir $BUILD_DIR
 pushd src
 
-$APRICOSASM_CMD boot.asm && mv -f boot.bin ${PROJECT_ROOT}/build/
+$APRICOSASM_CMD boot.asm && mv -f boot.bin $BUILD_DIR
 
 $APRICOSASM_CMD -lds \
     diskio.asm \
@@ -32,6 +33,6 @@ $APRICOSASM_CMD -lds \
     fsdriver.asm \
     fsmem.asm \
     testprogram.asm \
-    && mv -f link.bin ${PROJECT_ROOT}/build/0.dsk && mv -f symbols.sym ${PROJECT_ROOT}/build/
+    && mv -f link.bin ${BUILD_DIR}/0.dsk && mv -f symbols.sym $BUILD_DIR
 
 popd
