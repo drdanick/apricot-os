@@ -15,7 +15,7 @@
 ; ===================================
 ;
 #name "shellcmds"
-#segment 13
+#segment 14
 
 #include "apricotosint.asm"
 #include "faulthandler.asm"

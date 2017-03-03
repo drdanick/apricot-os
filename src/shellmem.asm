@@ -15,7 +15,7 @@
 ; ===================================
 ;
 #name "shellmem"
-#segment 10
+#segment 11
 
 DIRSTACKPTR: .nearptr DIRSTACK  ; Directory stack pointer
 DIRSTACK: .blockw 64 0          ; 64 entry directory stack

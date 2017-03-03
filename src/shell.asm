@@ -14,7 +14,7 @@
 ; ===================================
 ;
 #name "shell"
-#segment 14
+#segment 15
 
 #include "apricotosint.asm"
 #include "shellutil.asm"
