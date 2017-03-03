@@ -1,7 +1,8 @@
 ; asmsyntax=apricos
 ; ===================================
 ; ==                               ==
-; ==   ApricotOS Standard Header   ==
+; ==   ApricotOS Internal System   ==
+; ==             Header            ==
 ; ==                               ==
 ; ==          Revision 1           ==
 ; ==                               ==
