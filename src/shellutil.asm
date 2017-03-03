@@ -21,6 +21,8 @@
 #include "shellcmds.asm"
 #include "disp.asm"
 #include "osutil.asm"
+#include "portout.asm"
+#include "portin.asm"
 
 .nearptr PRINTPROMPT
 .nearptr READLINE
@@ -73,11 +75,11 @@ READLINE:
     ; Reset the TTY and put it into line mode
     AND 0
     ADD 3
-    PRTout 7
+    PORTOUT_TTY_WRITE
     LARl 0x7F
-    PRTout 7
+    PORTOUT_TTY_WRITE
     AND 0
-    PRTout 7
+    PORTOUT_TTY_WRITE
 
 
     ; Set up constant values in registers
@@ -140,9 +142,9 @@ READLINE:
     RL_LOOP_START:
         ASET 8   ; $a8 will hold the character while it is being processed
 
-        PRTin 2  ; Get the character
+        PORTIN_KBD_INPUT ; Get the character
         
-        SPUSH    ; Save the character 
+        SPUSH            ; Save the character 
 
         ; Check for newline
         ASET 4
@@ -243,7 +245,7 @@ READLINE:
 
         ; Echo the character
         ASET 10
-        PRTout 7
+        PORTOUT_TTY_WRITE
 
         ; Increment the input length and buffer pointer
         ASET 14
@@ -270,12 +272,12 @@ READLINE:
 
         ; Print a backspace char to the terminal
         ASET 5
-        PRTout 7
+        PORTOUT_TTY_WRITE
 
         JMP RL_LOOP_START
         DO_NEWLINE:
         ASET 4
-        PRTout 7
+        PORTOUT_TTY_WRITE
         SPOP    ; Dump the previously saved character
     RL_LOOP_END:
 
@@ -288,7 +290,7 @@ READLINE:
 
     ; Reset the TTY mode
     ADD 3
-    PRTout 7
+    PORTOUT_TTY_WRITE
 
     ; Set the remaining return values
     ASET 14

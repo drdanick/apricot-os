@@ -17,6 +17,7 @@
 #segment 6
 
 #include "apricotosint.asm"
+#include "portout.asm"
 #include "faulthandler.asm"
 #include "osutil.asm"
 #include "memutil.asm"
@@ -33,7 +34,7 @@
 ; as temporary storage.
 #macro TRACKSEL track {
     LARl track
-    PRTout 0x04
+    DISKIO_PORTOUT_DISK_TRACKSEL
 }
 
 ; Function pointers
@@ -57,7 +58,7 @@
 ;
 COPYFROMDSK:
     ASET 8
-    PRTout 0x05
+    PORTOUT_DISK_READSECTOR
 
     ; Check that the segment number is valid by masking out valid range bits
     SPUSH
@@ -102,7 +103,7 @@ COPYTODSK:
 
     ; Write the data back to disk at the given segment
     SPOP
-    PRTout 0x06
+    PORTOUT_DISK_WRITESECTOR
 
     OS_SYSCALL_RET
 
@@ -140,7 +141,7 @@ COPYBULKFROMDSK:
         SPOP AND
         BRnp TRACKNUM_ERROR
         SPOP         ; Restore the track number
-        PRTout 0x04  ; Select the track
+        PORTOUT_DISK_TRACKSEL
 
     CBFD_COPYLP_NOSETTRACK: ; Jump to this if we don't need to set the track
         ASET 3
@@ -223,7 +224,7 @@ COPYBULKTODSK:
         SPOP AND
         BRnp TRACKNUM_ERROR
         SPOP         ; Restore the track number
-        PRTout 0x04  ; Select the track
+        PORTOUT_DISK_TRACKSEL
 
     CBTD_COPYLP_NOSETTRACK: ; Jump to this if we don't need to set the track
         ASET 3

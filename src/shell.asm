@@ -23,6 +23,7 @@
 #include "osutil.asm"
 #include "memutil.asm"
 #include "disp.asm"
+#include "portout.asm"
 
 .nearptr MAIN
 
@@ -34,9 +35,9 @@ MAIN:
 
     ; Put the TTY into character line mode
     LARl 0x7F
-    PRTout 7
+    PORTOUT_TTY_WRITE
     AND 0
-    PRTout 7
+    PORTOUT_TTY_WRITE
 
 
 
@@ -61,23 +62,23 @@ SHELL_RUN:
     ; Enable the cursor
     AND 0
     ADD 3
-    PRTout 7
+    PORTOUT_TTY_WRITE
     LARl 0x10
-    PRTout 7
-    PRTout 7
+    PORTOUT_TTY_WRITE
+    PORTOUT_TTY_WRITE
     OS_SYSCALL SHELLUTIL_READLINE
 
     ; Disable the cursor
     LARl 0x10
-    PRTout 7
+    PORTOUT_TTY_WRITE
     AND 0
-    PRTout 7
+    PORTOUT_TTY_WRITE
 
     ; Reenable line mode
     LARl 0x7F
-    PRTout 7
+    PORTOUT_TTY_WRITE
     AND 0
-    PRTout 7
+    PORTOUT_TTY_WRITE
 
     ; Don't bother doing anything if the input was empty
     ASET 15

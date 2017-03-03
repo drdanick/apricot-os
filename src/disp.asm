@@ -18,16 +18,17 @@
 #segment 7
 
 #include "apricotosint.asm"
+#include "portout.asm"
 
 #macro TTY_MODE mode treg {
     ASET treg
     LARl mode
-    PRTout 7
+    PORTOUT_TTY_WRITE
 }
 
 #macro PUTCHAR treg {
     ASET treg
-    PRTout 7
+    PORTOUT_TTY_WRITE
 }
 
 ; Routine pointers
@@ -53,7 +54,7 @@ PUTSTR:
         ASET 10
         LD
         BRz PRINT_END
-        PRTout 7
+        PORTOUT_TTY_WRITE
         ASET 9
         ADD 1
         STal
@@ -75,18 +76,18 @@ TTYRESET:
     ASET 8
     AND 0
     ADD 3
-    PRTout 7   ; End any previous TTY command
+    PORTOUT_TTY_WRITE ; End any previous TTY command
 
 
     ; Disable the cursor
     LARl 0x10   ; Cursor disable
-    PRTout 7
+    PORTOUT_TTY_WRITE
     AND 0
-    PRTout 7
+    PORTOUT_TTY_WRITE
 
     ; Clear the screen
     LARl 0x12   ; CLS
-    PRTout 7
-    PRTout 7
+    PORTOUT_TTY_WRITE
+    PORTOUT_TTY_WRITE
 
     OS_SYSCALL_RET

@@ -17,6 +17,7 @@
 #segment 4
 
 #include "apricotosint.asm"
+#include "portout.asm"
 
 ; Function pointers
 .nearptr PUSHREGS
@@ -311,5 +312,5 @@ POPALLREGS:
 HALT:
     AND 0
     ADD 15
-    PRTout 0x00
+    PORTOUT_SLEEP
     JMP HALT

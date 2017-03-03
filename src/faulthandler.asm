@@ -18,6 +18,7 @@
 #include "apricotosint.asm"
 #include "osutil.asm"
 #include "disp.asm"
+#include "portout.asm"
 
 ; Routine pointers
 .nearptr PRINTERR
@@ -38,18 +39,18 @@ PRINTERR:
     libdisp_TTY_MODE 0x03 8 ; End any previous TTY command
     libdisp_TTY_MODE 0x10 8 ; Disable the cursor
     AND 0
-    PRTout 7
+    PORTOUT_TTY_WRITE
     libdisp_TTY_MODE 0x7F 8 ; Enable command repeat mode
     AND 0                   ; ...on PUTCHAR
-    PRTout 7
+    PORTOUT_TTY_WRITE
 
     ; BUG: Terminal doesn't blank out the cursor if it's disabled. Manually accounted for here by printing a space.
     ADD 2
     SHFl 4
-    PRTout 7      ; Print a space (0x20) to the terminal
+    PORTOUT_TTY_WRITE ; Print a space (0x20) to the terminal
     AND 0
     ADD 13
-    PRTout 7      ; Print a return carriage to reset the cursor
+    PORTOUT_TTY_WRITE ; Print a return carriage to reset the cursor
 
     LDI ERR_PTRS  ; Set up $a8 for the upcoming call by setting it to the current segment address
     LDah

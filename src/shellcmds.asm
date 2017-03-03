@@ -22,6 +22,7 @@
 #include "disp.asm"
 #include "shellmem.asm"
 #include "math.asm"
+#include "portout.asm"
 
 #macro SHELLCMD_RET {
     SPOP
@@ -153,14 +154,14 @@ PWD:
 CLS:
     AND 0
     ADD 3
-    PRTout 7
+    PORTOUT_TTY_WRITE
     LARl 0x12
-    PRTout 7
-    PRTout 7
+    PORTOUT_TTY_WRITE
+    PORTOUT_TTY_WRITE
     LARl 0x7F
-    PRTout 7
+    PORTOUT_TTY_WRITE
     AND 0
-    PRTout 7
+    PORTOUT_TTY_WRITE
     SHELLCMD_RET
 
 CAT:
