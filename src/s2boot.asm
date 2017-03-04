@@ -45,6 +45,7 @@ JMP
 ASET 5   ; Use $a5 to hold the base address of the disk paging region
 LARh 0xFE
 
+; Load 61 sectors from the disk into memory, starting from the second sector.
 ASET 1     ; Use $a1 to store the value of -61 (negative number of sectors we want to load)
 LARl 195   ; On a signed 8-bit machine, this is equivalent to -61.
 ASET 0     ; Use $a0 to store the sector currently being read from disk (the block being written to is this)
