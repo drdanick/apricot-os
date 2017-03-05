@@ -67,7 +67,7 @@ PUTSTR:
 
 
 ; Reset the TTY
-; 
+;
 ; Volatile registers:
 ; $a8
 ;
