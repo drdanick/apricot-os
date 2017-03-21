@@ -201,24 +201,6 @@ BRnp LOADER_COPY_LOOP
 LAh 1
 LAl 0
 
-; Zero the first 8 registers
-ASET 1
-AND 0
-ASET 2
-AND 0
-ASET 3
-AND 0
-ASET 4
-AND 0
-ASET 5
-AND 0
-ASET 6
-AND 0
-ASET 7
-AND 0
-ASET 0
-AND 0
-
 ; Jump to first loaded segment
 ;PRTin 4
 JMP
