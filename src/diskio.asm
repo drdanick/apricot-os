@@ -62,7 +62,7 @@ COPYFROMDSK:
 
     ; Check that the segment number is valid by masking out valid range bits
     SPUSH
-    LARl 0x70   ; 0x70 masks away all but the invalid segment number bits. Valid values will mask to 0.
+    LARl 0xC0   ; 0xC0 masks away all but the invalid segment number bits. Valid values will mask to 0.
     SPOP AND
     BRnp SEGNUM_ERROR
 
@@ -91,8 +91,8 @@ COPYTODSK:
     SPUSH      ; Save this for later
 
     ; Check that the segment number is valid by masking out valid range bits
-    SPUSH      ; We need the segment number in the stack again for this operation
-    LARl 0x70   ; 0x70 masks away all but the invalid segment number bits. Valid values will mask to 0.
+    SPUSH       ; We need the segment number in the stack again for this operation
+    LARl 0xC0   ; 0xC0 masks away all but the invalid segment number bits. Valid values will mask to 0.
     SPOP AND
     BRnp SEGNUM_ERROR
 
@@ -137,7 +137,7 @@ COPYBULKFROMDSK:
         ASET 2
         SPUSH        ; Push twice as we need the original value after this operation
         SPUSH
-        LARl 0x30     ; 0x30 masks out valid track bits
+        LARl 0xE0    ; 0xE0 masks out valid track bits
         SPOP AND
         BRnp TRACKNUM_ERROR
         SPOP         ; Restore the track number
@@ -220,7 +220,7 @@ COPYBULKTODSK:
         ASET 2
         SPUSH        ; Push twice as we need the original value after this operation
         SPUSH
-        LARl 0x30     ; 0x30 masks out valid track bits
+        LARl 0xE0     ; 0xE0 masks out valid track bits
         SPOP AND
         BRnp TRACKNUM_ERROR
         SPOP         ; Restore the track number
