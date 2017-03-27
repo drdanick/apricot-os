@@ -17,8 +17,16 @@
 #name "shellmem"
 #segment 11
 
+; Directory stack entry structure:
+; - Track Number:    1 byte
+; - Sector Number:   1 byte
+; - Name string ptr: 2 bytes
+;
+; Total entry size: 4 bytes
+;
 DIRSTACKPTR: .nearptr DIRSTACK  ; Directory stack pointer
-DIRSTACK: .blockw 64 0          ; 64 entry directory stack
+DIRSTACK: .blockw 64 0          ; 16 entry directory stack
+DIRSTACK_END:
 
 CMDBUFF: .blockw 128 0          ; Command buffer
 CMDBUFFEND: .fill 0             ; Guarantee a null terminator for the buffer
