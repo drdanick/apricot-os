@@ -32,6 +32,11 @@ CMDBUFF: .blockw 128 0          ; Command buffer
 CMDBUFFEND: .fill 0             ; Guarantee a null terminator for the buffer
 
 
+;====================
+;  SEGMENT BOUNDARY
+;====================
+.padseg 0x00
+
 
 ;============================
 ;=                          =
@@ -39,13 +44,7 @@ CMDBUFFEND: .fill 0             ; Guarantee a null terminator for the buffer
 ;=                          =
 ;============================
 
-PROMPT: .stringz "\n>"          ; Prompt string
-UNKNOWN_CMD: .stringz "BAD COMMAND OR FILENAME\n"
-
-;====================
-;  SEGMENT BOUNDARY
-;====================
-.padseg 0x00
-
+PROMPT:      .stringz "\n>"
 GREET:       .stringz "ApricotOS PIE shell [Version 0.0.1]\n(C) Copyright 2014-2017 Nick Stones-Havas\n"
+UNKNOWN_CMD: .stringz "BAD COMMAND OR FILENAME\n"
 HI:          .stringz "Hello Sailor...\n"
