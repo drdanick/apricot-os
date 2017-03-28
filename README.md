@@ -54,7 +54,7 @@ most of the process. In order for this script to work, the latest [Apricosasm](h
 jar needs to be placed alongside the script. After running the script, the assembled Operating System will be placed in the newly
 created `build/` directory.
 
-The assembled Operating System consists of three files, these are:
+The assembled Operating System consists of four files, these are:
 
 - **boot.bin**    The assembled first stage bootloader.
 - **0.dsk**       The assembled Operating System packaged as an Apricos disk image
