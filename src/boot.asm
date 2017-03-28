@@ -25,18 +25,13 @@
 ;=========================================
 
 ; Clear the Screen
-;
-; Arguments:
-; treg - Temporary register
-;
-; Volatile:
-; Alters $mar
 #macro CLS {
     LARl 0x12
     PRTout 7
     PRTout 7
 }
 
+; Set the current TTY mode
 #macro TTY_MODE mode {
     LARl mode
     PRTout 7
@@ -51,6 +46,12 @@
 ;TODO: TTY should not have the cursor invisible by default
 TTY_MODE 0x03   ; End any previous TTY command
 CLS             ; Clear screen
+
+ASET 9 ; Enable line mode, zero $a9, and enable line character output on TTY.
+LARl 0x7F
+PRTout 7
+AND 0
+PRTout 7
 
 ; Use $a14 to hold the sleep period (we will use 1000ms, so $a14 must hold 100)
 ASET 14
@@ -83,9 +84,9 @@ ASET 1
 ADD 1
 BRnz LOAD_DISK
 ; If counter is positive, print an error and halt.
-ASET 8
+ASET 9
 LARl DISK_READ_ERROR
-JMP PRINT_ERROR
+JMP INVALID_DISK
 
 ; Check that the disk is bootable
 CHECK_DISK:
@@ -135,9 +136,9 @@ ADD 1     ; Adding 1 should make it equal to zero
 BRz BOOT_CODE_CHECK
 
 ; Disk is not valid
-ASET 8
+ASET 9
 LARl DISK_FORMAT_ERROR
-JMP PRINT_ERROR
+JMP INVALID_DISK
 
 BOOT_CODE_CHECK:
 
@@ -160,37 +161,26 @@ ADD 1   ; Adding 1 should make it equal to zero
 BRz COPY_LOADER
 
 ; Disk is not bootable
-ASET 8
+ASET 9
 LARl DISK_NOT_BOOTABLE_ERROR
-JMP PRINT_ERROR
+
+INVALID_DISK: ; Common code for halting after printing an error
+ASET 10
+LARl HALT
+SPUSH
+JMP PRINT_STRING
 
 
 ; Disk is bootable. Copy the first 128 sectors into memory.
 COPY_LOADER:
 
 ; Print a loading message
-ASET 9   ; We need to print this value before every character
-AND 0
-ASET 8
+ASET 9
+LARl END_LOAD_MESSAGE
+SPUSH
 LARl LOADING
-LAh LOADING
-PRINT_LOAD_MSG:
-    STal
-    SPUSH
-    LD
-    BRz PRINT_LOAD_MSG_END
-    ASET 9
-    PRTout 0x07
-    ASET 8
-    PRTout 0x07
-    SPOP
-    ADD 1
-    JMP PRINT_LOAD_MSG
-PRINT_LOAD_MSG_END:
-SPOP
-
-
-
+JMP PRINT_STRING
+END_LOAD_MESSAGE:
 
 ASET 1     ; Use $a1 to store the value of -4 (negative number of sectors we want to load)
 LARl 252    ; On a signed 8-bit machine, this is equivalent to -4.
@@ -227,22 +217,20 @@ LAl 0
 JMP
 
 
-
-
-; Routine to print an error message and halt
-; $a8 must hold the local address of the message to print
+; Shared print routine.
+; TTY must already be in line mode.
+; Segment local return address must be on the stack.
 ;
-; It is expected that the mar already contains the message segment number
-PRINT_ERROR:
-    ; Write 0x7F to the TTY in order to enable line mode
-    ASET 15
-    LARl 0x7F
-    PRTout 0x07
-    AND 0
-    STah   ; Make sure we have the right segment address
-    PRTout 0x07
-
+; $a8 - Segment number of string to print
+; $a9 - Segment local address of string to print
+;
+; Volatile registers:
+; $a9
+;
+PRINT_STRING:
     ASET 8
+    STah
+    ASET 9
     PRINT_LOOP:
         STal
         SPUSH
@@ -253,18 +241,20 @@ PRINT_ERROR:
         ADD 1
         JMP PRINT_LOOP
     PRINT_END:
-    ; Disable TTY line mode
-    ASET 15
-    AND 0
-    ADD 3
-    PRTout 0x07
+    SPOP ; Pop residual character
 
-    ; Halt
+    SPOP
+    STal
+    JMP
+
+; Halt the CPU
+;
+; $a14 - The sleep delay to use in the busy loop
+;
+HALT:
     ASET 14
-    HALT:
     PRTout 0x00
-    JMP HALT
-
+    JMP
 
 
 ; Messages
