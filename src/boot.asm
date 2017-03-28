@@ -145,7 +145,6 @@ BOOT_CODE_CHECK:
 ; Check that the last 2 bytes of this sector are 0xAA and 0x55 (xoring them together will produce 0xFF)
 ASET 15
 LDah
-;STah
 STal   ; Load the first byte
 ASET 10
 LD
@@ -164,7 +163,9 @@ BRz COPY_LOADER
 ASET 9
 LARl DISK_NOT_BOOTABLE_ERROR
 
-INVALID_DISK: ; Common code for halting after printing an error
+; Common code for printing an error and then halting
+; $a9 must already hold the segment local address of the string to print.
+INVALID_DISK:
 ASET 10
 LARl HALT
 SPUSH
