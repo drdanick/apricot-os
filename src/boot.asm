@@ -261,4 +261,4 @@ HALT:
 DISK_READ_ERROR:   .stringz  "Disk read error!"
 DISK_NOT_BOOTABLE_ERROR: .stringz  "Disk 0 is not bootable!"
 DISK_FORMAT_ERROR: .stringz  "Disk 0 is not valid!"
-LOADING: .stringz "Loading ApricotOS..."
+LOADING: .stringz "Loading Operating System..."
