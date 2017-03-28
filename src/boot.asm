@@ -241,7 +241,7 @@ PRINT_STRING:
         ADD 1
         JMP PRINT_LOOP
     PRINT_END:
-    SPOP ; Pop residual character
+    SPOP ; Pop residual address
 
     SPOP
     STal
