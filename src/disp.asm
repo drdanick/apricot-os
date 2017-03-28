@@ -15,7 +15,7 @@
 ; ===================================
 ;
 #name "libdisp"
-#segment 7
+#segment 8
 
 #include "apricotosint.asm"
 #include "portout.asm"

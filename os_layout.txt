@@ -28,8 +28,8 @@ x03  |   3 |
 x04  |   4 | OS register utilities
 x05  |   5 | Memory utilities
 x06  |   6 | Disk IO routines
-x07  |   7 | Display routines
-x08  |   8 |
+x07  |   7 | Disk Storage Allocation routines
+x08  |   8 | Display routines
 x09  |   9 | Math utilities
 x0A  |  10 |
 x0B  |  11 | Shell memory allocations

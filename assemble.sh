@@ -19,6 +19,7 @@ $APRICOSASM_CMD -s boot.asm && mv -f boot.bin $BUILD_DIR && mv -f symbols.sym $B
 
 $APRICOSASM_CMD -lds \
     diskio.asm \
+    diskalloc.asm \
     disp.asm \
     faulthandler.asm \
     memutil.asm \
