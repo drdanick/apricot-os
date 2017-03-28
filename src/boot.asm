@@ -47,7 +47,7 @@
 TTY_MODE 0x03   ; End any previous TTY command
 CLS             ; Clear screen
 
-ASET 9 ; Enable line mode, zero $a9, and enable line character output on TTY.
+ASET 8 ; Enable line mode, zero $a8, and enable line character output on TTY.
 LARl 0x7F
 PRTout 7
 AND 0
