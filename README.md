@@ -58,7 +58,8 @@ The assembled Operating System consists of three files, these are:
 
 - **boot.bin**    The assembled first stage bootloader.
 - **0.dsk**       The assembled Operating System packaged as an Apricos disk image
-- **symbols.sym** The symbols table for the Operating System (used for debugging)
+- **boot.sym**    The symbols table for the Stage 1 bootloader (used for debugging the bootloader)
+- **symbols.sym** The symbols table for the Operating System (used for debugging the OS)
 
 
 Loading the Bootloader
