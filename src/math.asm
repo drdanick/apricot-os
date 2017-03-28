@@ -22,6 +22,7 @@
 
 ; Routine pointers
 .nearptr MULT
+.nearptr DIV
 .nearptr ATOB
 .nearptr HTOI
 
@@ -66,6 +67,52 @@ MULT:
 
     OS_SYSCALL_RET
 
+; Perform integer division between two numbers
+; $a8 - the dividend to divide
+; $a9 - the divisor
+;
+; Outputs:
+; $a10 - the result of integer division. aka, the result of %a8 / %a9
+; $a11 - the remainder. aka, the result of $a8 MOD $a9.
+;
+; Volatile registers:
+; $a8
+;
+DIV:
+    ; zero the division result. (remainder is always overwritten, so no need to zero)
+    ASET 10
+    AND 0
+
+    ; Store the divisor on the stack so we can obtain the
+    ; remainder at the end
+    ASET 9
+    SPUSH
+
+    ; Negate the divisor so we can continuously subtract it
+    NOT
+    ADD 1
+    DIV_LOOP:
+        SPUSH
+        ASET 8
+        SPOP ADD
+        BRn DIV_LOOP_END
+        ASET 10
+        ADD 1
+        ASET 9
+        JMP DIV_LOOP
+    DIV_LOOP_END:
+
+    ; Calculate remainder by adding our saved divisor and
+    ; the result of our division loop (stored in $a8).
+    ASET 8
+    SPUSH
+    ASET 11
+    SPOP
+    SPOP ADD
+
+    ASET 8
+    OS_SYSCALL_RET
+
 
 ; Convert a string of numeric characters to an 8bit integer.
 ; Note that no bounds checking is done.
@@ -76,7 +123,7 @@ MULT:
 ; $a10 - The resulting 8 bit number
 ;
 ; Volatile registers:
-; 
+;
 ATOB:
     ; TODO
     OS_SYSCALL_RET
@@ -125,7 +172,7 @@ HTOI:
     ASET 13   ; Zero the character counter
     AND 0
 
-    ASET 14   ; Store negative value of '0' (to subtract from each hex character) 
+    ASET 14   ; Store negative value of '0' (to subtract from each hex character)
     LAR 0x30  ; ASCII encoding of '0'
     NOT       ; Negate this value
     ADD 1
@@ -169,7 +216,7 @@ HTOI:
 
         JMP HTOI_READ_LOOP ; Move on to the next character
     HTOI_READ_LOOP_END:
-    
+
     ASET 14 ; Store the value of -1 in $a14
     LAR 0xFF
 
