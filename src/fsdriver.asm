@@ -41,7 +41,6 @@ MOUNT_DISK:
     ASET 9
     LARh FSMEM_VOL_INFO
     ASET 10
-    MEOW:
     OS_SYSCALL DISKIO_COPYFROMDSK
 
     ; Load the space bitmap sector into memory (sector 63)
