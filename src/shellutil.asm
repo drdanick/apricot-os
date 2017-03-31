@@ -288,10 +288,6 @@ READLINE:
     AND 0
     ST
 
-    ; Reset the TTY mode
-    ADD 3
-    PORTOUT_TTY_WRITE
-
     ; Set the remaining return values
     ASET 14
     LARl SHELLMEM_CMDBUFF

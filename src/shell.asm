@@ -68,6 +68,10 @@ SHELL_RUN:
     PORTOUT_TTY_WRITE
     OS_SYSCALL SHELLUTIL_READLINE
 
+    ; Reset the TTY mode
+    LARl 3
+    PORTOUT_TTY_WRITE
+
     ; Disable the cursor
     LARl 0x10
     PORTOUT_TTY_WRITE
