@@ -26,7 +26,8 @@
 .nearptr ATOB
 .nearptr HTOI
 
-; Multiply two numbers together
+; Multiply two numbers together.
+; Both operands are treated as unsigned.
 ; $a8 - the first operand to multiply
 ; $a9 - the second operand to multiply
 ;
@@ -67,7 +68,8 @@ MULT:
 
     OS_SYSCALL_RET
 
-; Perform integer division between two numbers
+; Perform integer division between two numbers.
+; Both operands are treated as unsigned.
 ; $a8 - the dividend to divide
 ; $a9 - the divisor
 ;
