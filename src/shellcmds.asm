@@ -18,6 +18,7 @@
 #segment 14
 
 #include "apricotosint.asm"
+#include "osutil.asm"
 #include "faulthandler.asm"
 #include "disp.asm"
 #include "shellmem.asm"
@@ -193,13 +194,16 @@ MEMEXEC:
     ASET 10
     OS_SYSCALL LIBMATH_HTOI
 
+    ASET 15
+    OS_SYSCALL OSUTIL_PUSHALLREGS
+
     ; Jump the the user-entered address
-    ASET 12
     LDI PROGRAM_RETURN
     LDah
     SPUSH
     LDal
     SPUSH
+
 
     ASET 10
     STah
@@ -209,7 +213,15 @@ MEMEXEC:
     JMP
 
     PROGRAM_RETURN:
+    OS_SYSCALL OSUTIL_POPALLREGS
     SHELLCMD_RET
+
+
+; ===============================================
+;                SEGMENT BOUNDARY
+; ===============================================
+.padseg 0
+
 
 
 ; Anything that jumps here is incomplete
