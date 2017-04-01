@@ -36,6 +36,7 @@
 .nearptr TTYRESET
 
 ; Write a null terminated string to the display
+; The input string is allowed to cross a segment boundary
 ; $a8 - memory block containing string
 ; $a9 - block local address of string
 ;
@@ -58,6 +59,12 @@ PUTSTR:
         ASET 9
         ADD 1
         STal
+        BRnp PRINT_LOOP
+
+        ; An overflow occured, so increment the segment number
+        ASET 8
+        ADD 1
+        STah
         JMP PRINT_LOOP
     PRINT_END:
 
