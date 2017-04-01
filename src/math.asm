@@ -20,6 +20,36 @@
 #include "osutil.asm"
 #include "memutil.asm"
 
+;
+; ==============
+; MACROS
+; ==============
+;
+
+
+; Subtract two numbers
+; reg1 - the first operand
+; reg2 - the second operand
+;
+; Output:
+; reg1 - the result of the subtraction
+;
+#macro SUB reg1 reg2 {
+    ASET reg2
+    NOT
+    ADD 1
+    SPUSH
+    ASET reg1
+    SPOP ADD
+}
+
+
+;
+; ==============
+; ROUTINES
+; ==============
+;
+
 ; Routine pointers
 .nearptr MULT
 .nearptr DIV
