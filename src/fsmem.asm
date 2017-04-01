@@ -14,7 +14,7 @@
 ;
 
 #name "fsmem"
-#segment 18
+#segment 19
 
 ; NOTE: This data spans two segments
 

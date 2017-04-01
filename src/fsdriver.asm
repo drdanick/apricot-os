@@ -14,7 +14,7 @@
 ;
 
 #name "fs"
-#segment 16
+#segment 17
 
 #include "apricotosint.asm"
 #include "fsmem.asm"
