@@ -310,7 +310,7 @@ POPALLREGS:
 ; -This function will never return to the caller.
 ;
 HALT:
-    AND 0
-    ADD 15
-    PORTOUT_SLEEP
-    JMP HALT
+    LARl 15
+    HALT_LOOP:
+        PORTOUT_SLEEP
+        JMP HALT_LOOP
