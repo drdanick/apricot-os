@@ -117,6 +117,87 @@ MULT:
 
     OS_SYSCALL_RET
 
+; Raise a base number to the power of an exponent.
+; $a8 - The base
+; $a9 - The power
+;
+; Outputs:
+; $a10 - The result
+; $a11 - non-zero if an overflow occured, zero otherwise
+;
+; Volatile registers:
+; $a9
+; $a11
+; $a12
+; $a14
+; $a15
+;
+POW:
+    ; Zero the overflow register (using 12 for this until we have our final result)
+    ASET 12
+    AND 0
+
+    ; Move base to the stack and set result to 1
+    ASET 8
+    SPUSH
+    LARl 1
+
+    ; Move $a9 to $a15 so it's not disturbed by MULT
+    ASET 9
+    SPUSH
+    ASET 15
+    SPOP
+
+    BRz POW_LOOP_END
+    POW_LOOP:
+        ; Pop base into $a9
+        ASET 9
+        SPOP
+
+        ; Keep base on the stack for later
+        SPUSH
+
+        ; Call MULT
+        ASET 14
+        OS_LOCALSYSCALL MULT
+
+        ; Move the overflow flag into $a12
+        ASET 11
+        SPUSH
+        ASET 12
+        SPOP OR
+
+        ; Move the mult result from $a10 to $a8
+        ASET 10
+        SPUSH
+        ASET 8
+        SPOP
+
+        ; Subtract 1 from counter and break if zero
+        ASET 15
+        SPUSH
+        LARl 0xFF ; equivalent to -1
+        SPOP ADD
+        BRnp POW_LOOP
+    POW_LOOP_END:
+
+    ; Move our result from $a8 to $a10
+    ASET 8
+    SPUSH
+    ASET 10
+    SPOP
+
+    ; Move the overflow result from $a12 to $a11
+    ASET 12
+    SPUSH
+    ASET 11
+    SPOP
+
+    ASET 9
+    SPOP ; Clear base from the stack
+    OS_SYSCALL_RET
+
+
 ; Perform integer division between two numbers.
 ; Both operands are treated as unsigned.
 ; $a8 - the dividend to divide
@@ -176,8 +257,14 @@ DIV:
 ; Volatile registers:
 ;
 ATOB:
+    ;OS_SYSCALL MEMUTIL_STRLEN
     ; TODO
     OS_SYSCALL_RET
+
+; ================================
+;         SEGMENT BOUNDARY
+; ================================
+.padseg 0
 
 ; Convert a string of hex characters to a 16 bit integer.
 ; Note that no bounds checking is done.
