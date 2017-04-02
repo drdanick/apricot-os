@@ -17,3 +17,5 @@
 #macro KBD_STATUS   { PRTin 1 }
 #macro KBD_INPUT    { PRTin 2 }
 #macro DISK_STATUS  { PRTin 3 }
+#macro STATUS_REG   { PRTin 4 }
+#macro STACK_PTR    { PRTin 5 }
