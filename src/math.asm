@@ -19,6 +19,7 @@
 #include "apricotosint.asm"
 #include "osutil.asm"
 #include "memutil.asm"
+#include "portin.asm"
 
 ;
 ; ==============
@@ -63,14 +64,18 @@
 ;
 ; Outputs:
 ; $a10 - the result
+; $a11 - non-zero if an overflow occured, zero otherwise
 ;
 ; Volatile registers:
 ; $a9
 ; $a11
 ;
 MULT:
-    ; Zero the result
+    ; Zero the results
     ASET 10
+    AND 0
+
+    ASET 11
     AND 0
 
     ; Negate the second operand (to use it as a counter)
@@ -90,7 +95,21 @@ MULT:
         ; ...and add it to the result
         ASET 10
         SPOP ADD
+        OVERFLOW_CHECK:
 
+        ; Check for overflows
+        SPUSH
+        PORTIN_STATUS_REG
+        SHFr 3
+        BRz NO_MULT_OVERFLOW
+
+        ; An overflow occured
+        ASET 11
+        OR 1
+        ASET 10
+
+        NO_MULT_OVERFLOW:
+        SPOP
         ASET 9
         ADD 1
         JMP MULT_LOOP_START
