@@ -12,7 +12,7 @@
 ; ==                               ==
 ; ===================================
 ;
-#name "FAULT_HANDLER"
+#name "faulthandler"
 #segment 2
 
 #include "apricotosint.asm"
