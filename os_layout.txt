@@ -274,6 +274,6 @@ xF9  | 249 |
 xFA  | 250 |
 xFB  | 251 |
 xFC  | 252 |
-xFD  | 253 |
+xFD  | 253 | Runaway handler
 xFE  | 254 | [Disk paging space]
 xFF  | 255 | [Stack space]
