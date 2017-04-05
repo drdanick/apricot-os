@@ -117,6 +117,59 @@ MULT:
 
     OS_SYSCALL_RET
 
+; Perform integer division between two numbers.
+; Both operands are treated as unsigned.
+; $a8 - the dividend to divide
+; $a9 - the divisor
+;
+; Outputs:
+; $a10 - the result of integer division. aka, the result of %a8 / %a9
+; $a11 - the remainder. aka, the result of $a8 MOD $a9.
+;
+; Volatile registers:
+; $a8
+;
+DIV:
+    ; zero the division result. (remainder is always overwritten, so no need to zero)
+    ASET 10
+    AND 0
+
+    ; Store the divisor on the stack so we can obtain the
+    ; remainder at the end
+    ASET 9
+    SPUSH
+
+    ; Negate the divisor so we can continuously subtract it
+    NOT
+    ADD 1
+    DIV_LOOP:
+        SPUSH
+        ASET 8
+        SPOP ADD
+        BRn DIV_LOOP_END
+        ASET 10
+        ADD 1
+        ASET 9
+        JMP DIV_LOOP
+    DIV_LOOP_END:
+
+    ; Calculate remainder by adding our saved divisor and
+    ; the result of our division loop (stored in $a8).
+    ASET 8
+    SPUSH
+    ASET 11
+    SPOP
+    SPOP ADD
+
+    ASET 8
+    OS_SYSCALL_RET
+
+
+; ================================
+;         SEGMENT BOUNDARY
+; ================================
+.padseg 0
+
 ; Raise a base number to the power of an exponent.
 ; $a8 - The base
 ; $a9 - The power
@@ -198,73 +251,6 @@ POW:
     OS_SYSCALL_RET
 
 
-; Perform integer division between two numbers.
-; Both operands are treated as unsigned.
-; $a8 - the dividend to divide
-; $a9 - the divisor
-;
-; Outputs:
-; $a10 - the result of integer division. aka, the result of %a8 / %a9
-; $a11 - the remainder. aka, the result of $a8 MOD $a9.
-;
-; Volatile registers:
-; $a8
-;
-DIV:
-    ; zero the division result. (remainder is always overwritten, so no need to zero)
-    ASET 10
-    AND 0
-
-    ; Store the divisor on the stack so we can obtain the
-    ; remainder at the end
-    ASET 9
-    SPUSH
-
-    ; Negate the divisor so we can continuously subtract it
-    NOT
-    ADD 1
-    DIV_LOOP:
-        SPUSH
-        ASET 8
-        SPOP ADD
-        BRn DIV_LOOP_END
-        ASET 10
-        ADD 1
-        ASET 9
-        JMP DIV_LOOP
-    DIV_LOOP_END:
-
-    ; Calculate remainder by adding our saved divisor and
-    ; the result of our division loop (stored in $a8).
-    ASET 8
-    SPUSH
-    ASET 11
-    SPOP
-    SPOP ADD
-
-    ASET 8
-    OS_SYSCALL_RET
-
-
-; Convert a string of numeric characters to an 8bit integer.
-; Note that no bounds checking is done.
-; $a8 - Segment number of numeric string in memory
-; $a9 - Segment local address of numeric string in memory
-;
-; Outputs:
-; $a10 - The resulting 8 bit number
-;
-; Volatile registers:
-;
-ATOB:
-    ;OS_SYSCALL MEMUTIL_STRLEN
-    ; TODO
-    OS_SYSCALL_RET
-
-; ================================
-;         SEGMENT BOUNDARY
-; ================================
-.padseg 0
 
 ; Convert a string of hex characters to a 16 bit integer.
 ; Note that no bounds checking is done.
