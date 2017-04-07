@@ -101,3 +101,27 @@
     SPOP
     STah
 }
+
+; Macro for pushing the contents of $mar into the stack.
+;
+; Notes:
+; -The currently selected accumulator will
+; be used as temporary storage.
+#macro PUSH_MAR {
+    LDah
+    SPUSH
+    LDal
+    SPUSH
+}
+
+; Macro for popping the contents of $mar from the stack.
+;
+; Notes:
+; -The currently selected accumulator will
+; be used as temporary storage.
+#macro POP_MAR {
+    SPOP
+    STal
+    SPOP
+    STah
+}
