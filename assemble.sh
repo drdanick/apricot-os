@@ -15,8 +15,7 @@ BUILD_DIR="${PROJECT_ROOT}/build"
 mkdir $BUILD_DIR
 pushd src
 
-$APRICOSASM_CMD -s boot.asm && mv -f boot.bin $BUILD_DIR && mv -f symbols.sym $BUILD_DIR/boot.sym
-
+$APRICOSASM_CMD -s boot.asm && mv -f boot.bin $BUILD_DIR && mv -f symbols.sym $BUILD_DIR/boot.sym && \
 $APRICOSASM_CMD -lds \
     diskio.asm \
     diskalloc.asm \
