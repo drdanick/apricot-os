@@ -68,7 +68,7 @@ OS_SYSCALL MEMUTIL_MEMCPY
 
 
 ; Execute the shell
-OS_SYSCALL SHELL_MAIN
+OS_SYSJUMP SHELL_MAIN
 
 
 ; Code to be copied to the end of main memory space
