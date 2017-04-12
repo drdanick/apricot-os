@@ -165,6 +165,185 @@ DIV:
     OS_SYSCALL_RET
 
 
+; Convert a string of numeric characters to an 8bit integer.
+; Note that no bounds checking is done.
+; $a8 - Segment number of numeric string in memory
+; $a9 - Segment local address of numeric string in memory
+;
+; Outputs:
+; $a10 - Non-zero if the operation succeeded, 0 otherwise.
+; $a11 - The resulting 8 bit number.
+;
+; Volatile registers:
+; $a9
+; $a10
+; $a11
+; $a12
+; $a13
+; $a14
+; $a15
+;
+ATOB:
+    ; We're using $a0 in this routine, so store it on the stack before we do anything else
+    ASET 0
+    SPUSH
+
+    ; Then set it to be zero
+    AND 0
+
+    ; We need the length of the string to figure out what decimal weight to start with
+    ASET 15
+    OS_SYSCALL MEMUTIL_STRLEN
+
+    ; Assume an error occured until we know otherwise
+    ASET 10
+    AND 0
+
+    ; Zero the result
+    ASET 11
+    AND 0
+
+    ; $a13 will hold our decimal weight
+    LDI ATOB_WEIGHT_TABLE
+    ASET 13
+    SPUSH
+    LDal
+    SPOP ADD
+    STal
+    LD
+    SPUSH
+
+
+    ; Set $a14 to be the -ve of the maximum length we allow
+    ASET 14
+    LARl 0xFD ; -3
+
+    ; Subtract -3 from the calculated length. If it's negative, the length is longer than we support, so return in error.
+    ; No need to zero $a10, this has already been done
+    SPOP ADD
+    BRn ATOB_RETURN
+
+    ; ...Otherwise, we process the input string:
+    ;
+    ; Variables for this code:
+    ; $a0: The final result
+    ; $a8: The current decimal weight
+    ; $a14: The current character segment local address
+    ; $a15: -48, the value we subtract from each input number
+    ;
+
+    ; Move segment local address of string into $a9
+    ASET 9
+    SPUSH
+    ASET 14
+    SPOP
+
+    ASET 15
+    LARl 0xD0 ; -48
+
+    ASET 13
+    SPUSH ; Put the current decimal weight onto the stack
+    ASET 8
+    STah      ; Set up $mar segment to point to the input string
+    ATOB_LOOP:
+        ASET 14 ; Read the next character
+        STal
+        ADD 1  ; Advance to next character for next iteration
+
+        ASET 15
+        SPUSH
+
+        ; Load the next digit character and convert it to an integer
+        ASET 9
+        LD
+        SPOP ADD
+
+        ; Multiply input integer by the current decimal weight
+        ASET 8
+        SPOP
+        SPUSH ; ...but keep the weight on the stack
+        ASET 10
+        OS_PUSH_MAR
+        OS_SYSCALL MULT
+        OS_POP_MAR
+
+        ; Next, we add this to our result
+        ASET 10
+        SPUSH
+        ASET 0
+        SPOP ADD
+        SPUSH
+
+        ; Check for overflow in either mult routine or the last addition
+        PORTIN_STATUS_REG
+        SHFr 3
+        SPUSH
+        ASET 11
+        SPOP OR
+        BRnp ATOB_LOOP_ERROR
+
+        ASET 0
+        SPOP
+
+        ; Next, we divide the current decimal weight by 10
+        ASET 8
+        SPOP
+
+        ASET 9
+        LARl 10
+
+        ; Call the div routine
+        ASET 10
+        OS_PUSH_MAR
+        OS_SYSCALL DIV
+        OS_POP_MAR
+
+        ; If our weight is zero, break from the loop
+        ASET 10
+        SPUSH ; Push the result to the stack
+        BRz ATOB_LOOP_SUCCESS
+
+        JMP ATOB_LOOP
+    ATOB_LOOP_ERROR:
+        ASET 10
+        SPOP ; Remove residual result from stack
+        AND 0
+        JMP ATOB_LOOP_CLEANUP
+    ATOB_LOOP_SUCCESS:
+
+    ; If we got to this point, no error occured
+    ASET 10
+    OR 1
+
+    ; Move result into $a11
+    ASET 0
+    SPUSH
+    ASET 11
+    SPOP
+
+    ATOB_LOOP_CLEANUP:
+
+    ; Pop off residual values from stack
+    ASET 15
+    SPOP ; The decimal weight
+
+    ATOB_RETURN:
+
+    ; Restore $a0
+    ASET 0
+    SPOP
+
+    ASET 15
+    OS_SYSCALL_RET
+
+
+; ATOB Weight table
+ATOB_WEIGHT_TABLE:
+.fill 0
+.fill 1
+.fill 10
+.fill 100
+
 ; ================================
 ;         SEGMENT BOUNDARY
 ; ================================
