@@ -587,9 +587,61 @@ HTOI:
     ASET 12
     OS_SYSCALL_RET
 
+; An 8-bit random number generator based off the following:
+; http://www.arklyffe.com/main/2010/08/29/xorshift-pseudorandom-number-generator/
+; Be sure to seed the number generator at least once before calling this routine.
+;
+; Returns:
+; $a10 - The next random number in the sequence
+;
+; Volatile registers:
+; $a10
+; $a11
+;
+RAND:
+    ; Possible choises for a, b, and c:
+    ; (1, 1, 2) (1, 1, 3) (1, 7, 3) (1, 7, 6) (1, 7, 7) (2, 1, 1)
+    ; (2, 5, 5) (3, 1, 1) (3, 1, 5) (3, 5, 4) (3, 5, 5) (3, 5, 7)
+    ; (3, 7, 1) (4, 5, 3) (5, 1, 3) (5, 3, 6) (5, 3, 7) (5, 5, 2)
+    ; (5, 5, 3) (6, 3, 5) (6, 7, 1) (7, 3, 5) (7, 5, 3) (7, 7, 1)
+    ;
 
+    ; Load seed and perform shifts
+    ASET 10
+    LDI RAND_SEED
+    SPUSH
+
+    SHFl 3 ; a
+    SPOP XOR
+    SPUSH
+
+    SHFr 5 ; b
+    SPOP XOR
+    SPUSH
+
+    SHFl 4 ; c
+    SPOP XOR
+
+    ; Update the seed
+    ST
+
+    ASET 11
+    OS_SYSCALL_RET
+
+;
+;
+; ================
+;    RAND DATA
+; ================
+;
+RAND_SEED: .fill 0x01
+
+;
+; ================
+;    HTOI DATA
+; ================
+;
 TEMP_HEX_BYTES: .blockw 4 0  ; Temporary storage for hex->integer conversion
-
 HEX_TABLE:
 .fill 0   ; 0
 .fill 1   ; 1
