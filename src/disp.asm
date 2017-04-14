@@ -98,3 +98,11 @@ TTYRESET:
     PORTOUT_TTY_WRITE
 
     OS_SYSCALL_RET
+
+;
+; ================
+;   PUTNUM DATA
+; ================
+;
+DECTOCHAR_TABLE:
+.stringz '0123456789'
