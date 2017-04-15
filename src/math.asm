@@ -57,6 +57,64 @@
 .nearptr ATOB
 .nearptr HTOI
 
+; An 8-bit random number generator based off the following:
+; http://www.arklyffe.com/main/2010/08/29/xorshift-pseudorandom-number-generator/
+; Be sure to seed the number generator at least once before calling this routine.
+;
+; Returns:
+; $a10 - The next random number in the sequence
+;
+; Volatile registers:
+; $a10
+; $a11
+;
+RAND:
+    ; Possible choises for a, b, and c:
+    ; (1, 1, 2) (1, 1, 3) (1, 7, 3) (1, 7, 6) (1, 7, 7) (2, 1, 1)
+    ; (2, 5, 5) (3, 1, 1) (3, 1, 5) (3, 5, 4) (3, 5, 5) (3, 5, 7)
+    ; (3, 7, 1) (4, 5, 3) (5, 1, 3) (5, 3, 6) (5, 3, 7) (5, 5, 2)
+    ; (5, 5, 3) (6, 3, 5) (6, 7, 1) (7, 3, 5) (7, 5, 3) (7, 7, 1)
+    ;
+
+    ; Load seed and perform shifts
+    ASET 10
+    LDI RAND_SEED
+    SPUSH
+
+    SHFl 3 ; a
+    SPOP XOR
+    SPUSH
+
+    SHFr 5 ; b
+    SPOP XOR
+    SPUSH
+
+    SHFl 4 ; c
+    SPOP XOR
+
+    ; Update the seed
+    ST
+
+    ASET 11
+    OS_SYSCALL_RET
+
+; Set the seed of the random number generator.
+; $a8 - The seed to set
+;
+; Volatile registers:
+; $a8
+SET_RAND_SEED:
+    ASET 8
+    STI RAND_SEED
+    OS_SYSCALL_RET
+
+;
+; ================
+;    RAND DATA
+; ================
+;
+RAND_SEED: .fill 0x01
+
 ; Multiply two numbers together.
 ; Both operands are treated as unsigned.
 ; $a8 - the first operand to multiply
@@ -116,54 +174,6 @@ MULT:
     MULT_LOOP_END:
 
     OS_SYSCALL_RET
-
-; Perform integer division between two numbers.
-; Both operands are treated as unsigned.
-; $a8 - the dividend to divide
-; $a9 - the divisor
-;
-; Outputs:
-; $a10 - the result of integer division. aka, the result of %a8 / %a9
-; $a11 - the remainder. aka, the result of $a8 MOD $a9.
-;
-; Volatile registers:
-; $a8
-;
-DIV:
-    ; zero the division result. (remainder is always overwritten, so no need to zero)
-    ASET 10
-    AND 0
-
-    ; Store the divisor on the stack so we can obtain the
-    ; remainder at the end
-    ASET 9
-    SPUSH
-
-    ; Negate the divisor so we can continuously subtract it
-    NOT
-    ADD 1
-    DIV_LOOP:
-        SPUSH
-        ASET 8
-        SPOP ADD
-        BRn DIV_LOOP_END
-        ASET 10
-        ADD 1
-        ASET 9
-        JMP DIV_LOOP
-    DIV_LOOP_END:
-
-    ; Calculate remainder by adding our saved divisor and
-    ; the result of our division loop (stored in $a8).
-    ASET 8
-    SPUSH
-    ASET 11
-    SPOP
-    SPOP ADD
-
-    ASET 8
-    OS_SYSCALL_RET
-
 
 ; Convert a string of numeric characters to an 8bit integer.
 ; Note that no bounds checking is done.
@@ -587,54 +597,77 @@ HTOI:
     ASET 12
     OS_SYSCALL_RET
 
-; An 8-bit random number generator based off the following:
-; http://www.arklyffe.com/main/2010/08/29/xorshift-pseudorandom-number-generator/
-; Be sure to seed the number generator at least once before calling this routine.
+; Perform integer division between two numbers.
+; Both operands are treated as unsigned.
+; $a8 - the dividend to divide
+; $a9 - the divisor (must be less than 128)
 ;
-; Returns:
-; $a10 - The next random number in the sequence
+; Outputs:
+; $a10 - the result of integer division. aka, the result of %a8 / %a9
+; $a11 - the remainder. aka, the result of $a8 MOD $a9.
 ;
 ; Volatile registers:
-; $a10
-; $a11
+; $a8
 ;
-RAND:
-    ; Possible choises for a, b, and c:
-    ; (1, 1, 2) (1, 1, 3) (1, 7, 3) (1, 7, 6) (1, 7, 7) (2, 1, 1)
-    ; (2, 5, 5) (3, 1, 1) (3, 1, 5) (3, 5, 4) (3, 5, 5) (3, 5, 7)
-    ; (3, 7, 1) (4, 5, 3) (5, 1, 3) (5, 3, 6) (5, 3, 7) (5, 5, 2)
-    ; (5, 5, 3) (6, 3, 5) (6, 7, 1) (7, 3, 5) (7, 5, 3) (7, 7, 1)
-    ;
-
-    ; Load seed and perform shifts
-    ASET 10
-    LDI RAND_SEED
-    SPUSH
-
-    SHFl 3 ; a
-    SPOP XOR
-    SPUSH
-
-    SHFr 5 ; b
-    SPOP XOR
-    SPUSH
-
-    SHFl 4 ; c
-    SPOP XOR
-
-    ; Update the seed
-    ST
-
+DIV:
+    ; First set $a11 to 1 if the dividend is greater than 127.
+    ; This is a hack to prevent the div loop from terminating if the dividend is greater than 127
     ASET 11
+    AND 0
+    ASET 8
+    BRzp DIV_SMALL_DIVIDEND
+    ASET 11
+    OR 1
+    DIV_SMALL_DIVIDEND:
+
+    ; zero the division result. (remainder is always overwritten, so no need to zero)
+    ASET 10
+    AND 0
+
+    ; Store the divisor on the stack so we can obtain the
+    ; remainder at the end
+    ASET 9
+    SPUSH
+
+    ; Negate the divisor so we can continuously subtract it
+    NOT
+    ADD 1
+    DIV_LOOP:
+        SPUSH
+        ASET 8
+        SPOP ADD
+
+        ; If result is non-negative, zero $a11
+        BRn DIV_SKIP_A11_CHECK
+        ASET 11
+        AND 0
+        DIV_SKIP_A11_CHECK:
+
+        ASET 11
+        BRp DIV_SKIP_LOOP_TERMINATE_CHECK
+
+        ASET 8
+        BRn DIV_LOOP_END
+        DIV_SKIP_LOOP_TERMINATE_CHECK:
+        ASET 10
+        ADD 1
+        ASET 9
+        JMP DIV_LOOP
+    DIV_LOOP_END:
+
+    ; Calculate remainder by adding our saved divisor and
+    ; the result of our division loop (stored in $a8).
+    ASET 8
+    SPUSH
+    ASET 11
+    SPOP
+    SPOP ADD
+
+    ASET 8
     OS_SYSCALL_RET
 
-;
-;
-; ================
-;    RAND DATA
-; ================
-;
-RAND_SEED: .fill 0x01
+
+
 
 ;
 ; ================
