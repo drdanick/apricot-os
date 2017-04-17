@@ -32,9 +32,11 @@
 ; Notes:
 ; The currently selected accumulator is used
 ; as temporary storage.
+;
+; Requires that portout.asm be included.
 #macro TRACKSEL track {
     LARl track
-    DISKIO_PORTOUT_DISK_TRACKSEL
+    PORTOUT_DISK_TRACKSEL
 }
 
 ; Function pointers
