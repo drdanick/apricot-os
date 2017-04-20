@@ -115,6 +115,56 @@ SET_RAND_SEED:
 ;
 RAND_SEED: .fill 0x01
 
+
+; Fast multiplication of two numbers, but without overflow checks.
+; Runtime of this function is O(k), where k is the position of the
+; most significant bit in the second operand. For example, if we
+; multiply 0010 by 0101, then k = 3.
+; For this reason, the smaller operand should be placed in $a9, and
+; the larger in $a8.
+; Unlike regular MULT, this function does no overflow checks, so
+; care must be taken with the input parameters.
+; $a8 - the first operand to multiply
+; $a9 - the second operand to multiply
+;
+; Returns:
+; $a10 - The result
+;
+; Volatile registers:
+; $a8
+; $a9
+; $a10
+FASTMULT:
+    ASET 10
+    AND 0
+
+    FASTMULT_LOOP_START:
+        ASET 9
+        BRz FASTMULT_LOOP_END
+
+        SPUSH
+        AND 0x01
+        BRz FASTMULT_ADD_SKIP
+        ASET 8
+        SPUSH
+
+        ASET 10
+        SPOP ADD
+
+        FASTMULT_ADD_SKIP:
+        ASET 9
+        SPOP
+
+        SHFr 1
+        ASET 8
+        SHFl 1
+
+        JMP FASTMULT_LOOP_START
+    FASTMULT_LOOP_END:
+
+    ASET 8
+    OS_SYSCALL_RET
+
 ; Multiply two numbers together.
 ; Both operands are treated as unsigned.
 ; $a8 - the first operand to multiply
