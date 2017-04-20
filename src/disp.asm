@@ -32,6 +32,11 @@
     PORTOUT_TTY_WRITE
 }
 
+#macro PUTNEWLINE {
+    LARl 10
+    PORTOUT_TTY_WRITE
+}
+
 ; Routine pointers
 .nearptr PUTSTR
 .nearptr PUTNUM
