@@ -19,6 +19,7 @@
 #include "apricotosint.asm"
 #include "fsmem.asm"
 #include "diskio.asm"
+#include "portout.asm"
 
 .nearptr MOUNT_DISK
 
