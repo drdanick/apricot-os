@@ -39,6 +39,30 @@
     CALLFUNC_RET:
 }
 
+; Macro for local function calls
+; The caller and callee must be in the same memory segment
+;
+; Arguments:
+; Func - Label of function
+;
+; Notes:
+; -$a15 will be used as temporary storage.
+; -$mar can be manipulated by the callee
+#macro CALLFUNC_LOCAL Func {
+    ASET 15
+    ; Push the return address segment to the stack
+    LDI OS_CALLFUNC_LOCAL_RET  ; LDI will load $mar with the full return address
+    LDah
+    SPUSH
+    LDal
+    SPUSH
+
+    ; Load the address of the function to be called
+    LAl Func
+    JMP
+    CALLFUNC_LOCAL_RET:
+}
+
 ; Macro for returning from a function call
 ;
 ; Notes:
