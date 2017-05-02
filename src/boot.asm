@@ -47,6 +47,11 @@
 TTY_MODE 0x03   ; End any previous TTY command
 CLS             ; Clear screen
 
+LARl 0x0C
+PRTout 7
+LARl 2
+PRTout 7
+
 ASET 8 ; Enable line mode, zero $a8, and enable line character output on TTY.
 LARl 0x7F
 PRTout 7
@@ -260,6 +265,6 @@ HALT:
 
 ; Messages
 DISK_READ_ERROR:   .stringz  "Disk read error!"
-DISK_NOT_BOOTABLE_ERROR: .stringz  "Disk 0 is not bootable!"
-DISK_FORMAT_ERROR: .stringz  "Disk 0 is not valid!"
+DISK_NOT_BOOTABLE_ERROR: .stringz  "Disk 0 not bootable!"
+DISK_FORMAT_ERROR: .stringz  "Disk 0 not valid!"
 LOADING: .stringz "Loading Operating System..."
