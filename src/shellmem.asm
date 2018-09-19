@@ -45,7 +45,7 @@ CMDBUFFEND: .fill 0             ; Guarantee a null terminator for the buffer
 ;============================
 
 PROMPT:      .stringz "\n>"
-GREET:       .stringz "ApricotOS PIE shell [Version 0.0.1]\n(C) Copyright 2014-2017 Nick Stones-Havas\n"
+GREET:       .stringz "ApricotOS PIE shell [Version 0.0.1]\n(C) Copyright 2014-2018 Nick Stones-Havas\n"
 UNKNOWN_CMD: .stringz "BAD COMMAND OR FILENAME\n"
 HELP_MSG:    .stringz "KNOWN COMMANDS:\n"
 HI:          .stringz "Hello Sailor...\n"
