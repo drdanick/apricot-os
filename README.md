@@ -50,7 +50,7 @@ Assembling
 ----------
 
 In order to assemble the Operating System, a script has been provided in the project's root directory to automate
-most of the process. In order for this script to work, the latest [Apricosasm](https://github.com/drdanick/apricosasm-java/releases)
+most of the process. In order for this script to work, the latest [Apricosasm](http://apricot.drdanick.com/apricosasm.jar))
 jar needs to be placed alongside the script. After running the script, the assembled Operating System will be placed in the newly
 created `build/` directory.
 
