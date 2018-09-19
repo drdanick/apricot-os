@@ -76,7 +76,7 @@ PUTSTR:
     PRINT_END:
 
     ; Return to caller
-    ASET 8
+    ASET 9
     OS_SYSCALL_RET
 
 ; Write an 8 bit number to the display

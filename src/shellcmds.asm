@@ -55,6 +55,7 @@ CMD_ARRAY:
 .nearptr ECHO_H
 .nearptr TOUCH_H
 .nearptr MEMEXEC_H
+.nearptr HELP_H
 .fill 0
 
 
@@ -110,6 +111,10 @@ TOUCH_H:
 MEMEXEC_H:
 .farptr MEMEXEC
 .stringz "MEMEXEC"
+
+HELP_H:
+.farptr HELP
+.stringz "HELP"
 
 
 
@@ -222,6 +227,38 @@ MEMEXEC:
 ; ===============================================
 .padseg 0
 
+HELP: 
+    ASET 8
+    LARh SHELLMEM_HELP_MSG
+    ASET 9
+    LARl SHELLMEM_HELP_MSG
+    ASET 10
+    OS_SYSCALL LIBDISP_PUTSTR
+    
+    ASET 11
+    LARh CMD_ARRAY
+    ASET 12
+    LARl CMD_ARRAY
+    ASET 8
+    LARh CMD_ARRAY
+    HELP_LOOP:
+        ASET 11
+        STah
+        ASET 12
+        STal
+        ASET 9
+        LD
+        BRz HELP_LOOP_END
+        ADD 2
+        ASET 15
+        OS_SYSCALL LIBDISP_PUTSTR
+        LIBDISP_PUTNEWLINE
+        ASET 12
+        ADD 1
+        JMP HELP_LOOP
+    HELP_LOOP_END:
+    
+    SHELLCMD_RET
 
 
 ; Anything that jumps here is incomplete
