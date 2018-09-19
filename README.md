@@ -32,7 +32,7 @@ Requirements
 
 In order to assemble Apricot OS, you will need:
 
-- [Apricosasm V1.31+](https://apricot.drdanick.com/apricosasm.jar)
+- [Apricosasm V1.31+](http://apricot.drdanick.com/apricosasm.jar)
 
 In order to execute the OS, you will need:
 
