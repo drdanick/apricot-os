@@ -15,8 +15,8 @@ BUILD_DIR="${PROJECT_ROOT}/build"
 mkdir $BUILD_DIR
 pushd src
 
-$APRICOSASM_CMD -s boot.asm && mv -f boot.bin $BUILD_DIR && mv -f symbols.sym $BUILD_DIR/boot.sym && \
-$APRICOSASM_CMD -lds \
+$APRICOSASM_CMD -sh boot.asm && mv -f boot.bin $BUILD_DIR && mv -f symbols.sym $BUILD_DIR/boot.sym && mv -f hints.dbg $BUILD_DIR/boothints.dbg && \
+$APRICOSASM_CMD -ldsh \
     diskio.asm \
     diskalloc.asm \
     disp.asm \
@@ -33,6 +33,6 @@ $APRICOSASM_CMD -lds \
     fsdriver.asm \
     fsmem.asm \
     testprogram.asm \
-    && mv -f link.bin ${BUILD_DIR}/0.dsk && mv -f symbols.sym $BUILD_DIR
+    && mv -f link.bin ${BUILD_DIR}/0.dsk && mv -f symbols.sym $BUILD_DIR && mv -f hints.dbg $BUILD_DIR
 
 popd
