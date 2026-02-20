@@ -56,6 +56,7 @@ CMD_ARRAY:
 .nearptr TOUCH_H
 .nearptr MEMEXEC_H
 .nearptr HELP_H
+.nearptr SIXSEVEN_H
 .fill 0
 
 
@@ -116,7 +117,9 @@ HELP_H:
 .farptr HELP
 .stringz "HELP"
 
-
+SIXSEVEN_H:
+.farptr SIXSEVEN
+.stringz "SIXSEVEN"
 
 
 ;=========================================
@@ -185,6 +188,18 @@ ECHO:
     OS_SYSCALL LIBDISP_PUTSTR
 
     SHELLCMD_RET
+
+SIXSEVEN:
+    ASET 8
+    LARh SIXSEVEN_MSG
+    ASET 9
+    LARl SIXSEVEN_MSG
+    ASET 10
+    OS_SYSCALL LIBDISP_PUTSTR
+    SHELLCMD_RET
+
+SIXSEVEN_MSG:
+.stringz "six seven"
 
 TOUCH:
     OS_SYSJUMP WIP
