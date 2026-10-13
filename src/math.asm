@@ -192,9 +192,10 @@ MULT:
     ADD 1
 
     ; Continuously add the value that is on the stack
-    ; to $a10 until the counter reaches 0
+    ; to $a10 until the counter reaches 0.
+    ; (Test for zero, not for >= 0: the negation of 129-255 is positive.)
     MULT_LOOP_START:
-        BRzp MULT_LOOP_END
+        BRz MULT_LOOP_END
 
         ; Place the first operand on the stack...
         ASET 8
@@ -451,7 +452,7 @@ POW:
 
         ; Call MULT
         ASET 14
-        OS_LOCALSYSCALL MULT
+        OS_SYSCALL MULT
 
         ; Move the overflow flag into $a12
         ASET 11
