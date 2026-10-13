@@ -32,6 +32,14 @@ $APRICOSASM_CMD -ldsh \
     math.asm \
     fsdriver.asm \
     fsmem.asm \
+    fsbuf.asm \
+    fsdir.asm \
+    fspath.asm \
+    fsread.asm \
+    fswrite.asm \
+    fsdel.asm \
+    fscopy.asm \
+    fscmds.asm \
     testprogram.asm \
     && mv -f link.bin ${BUILD_DIR}/0.dsk && mv -f symbols.sym $BUILD_DIR && mv -f hints.dbg $BUILD_DIR
 

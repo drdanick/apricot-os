@@ -3,7 +3,7 @@
 ; ==                               ==
 ; ==  ApricotOS Filesystem Driver  ==
 ; ==                               ==
-; ==          Revision 1           ==
+; ==          Revision 2           ==
 ; ==                               ==
 ; ==  (C) 2017  Nick Stones-Havas  ==
 ; ==                               ==
@@ -12,26 +12,40 @@
 ; ==                               ==
 ; ===================================
 ;
+; Filesystem routines return a status code in $a8:
+;  0 - OK
+;  1 - No filesystem          7 - File too big
+;  2 - Not found              8 - Not a directory
+;  3 - Already exists         9 - Not a file
+;  4 - Bad name              10 - Directory not empty
+;  5 - Directory full        11 - Path too deep
+;  6 - Disk full             12 - Missing argument
+;
 
 #name "fs"
 #segment 17
 
 #include "apricotosint.asm"
 #include "fsmem.asm"
+#include "fsbuf.asm"
 #include "diskio.asm"
+#include "diskalloc.asm"
+#include "memutil.asm"
+#include "disp.asm"
 #include "portout.asm"
 
-.nearptr MOUNT_DISK
-
 
 ;
-; Mount a filesystem on the currently loaded disk
-;
-; Volatile registers:
-; $a8-$a15
+; Mount the filesystem on the currently selected disk.
+; The disk is valid if its signature is correct, track 0 is marked
+; as allocated (bitmap byte 0 is 0xFF) and the root directory
+; (track 1, sector 0) is allocated. Sets FSBUF_MOUNTED.
 ;
 ; Returns:
 ; $a8 - Non-zero if the disk was mounted successfully, zero otherwise.
+;
+; Volatile registers:
+; $a8-$a15
 ;
 MOUNT_DISK:
     ASET 8
@@ -55,10 +69,6 @@ MOUNT_DISK:
     ; Validate the disk by checking that the first 4 bytes of
     ; this sector are 0xC0, 0x30, 0x0C, and 0x03.
     ; Xoring them together will produce 0xFF.
-
-    ASET 8 ; Set the return value to be initially non-zero
-    OR 1
-
     LAh FSMEM_VOL_INFO
     LAl 0x00
     ASET 9
@@ -82,12 +92,220 @@ MOUNT_DISK:
     SPOP XOR
     SPOP XOR
     ADD 1 ; Adding 1 will make it zero if the result was 0xFF (The only valid result)
-    BRz MOUNT_DISK_END
+    BRnp MOUNT_DISK_FAIL
 
-    ; Disk was not valid, so set the return value to be zero
+    ; Track 0 must be allocated
+    LAh FSMEM_VOL_BITMAP
+    LAl 0
+    LD
+    NOT
+    BRnp MOUNT_DISK_FAIL
+
+    ; The root directory (block 64: byte 8, bit 0) must be allocated
+    LAl 8
+    LD
+    AND 1
+    BRz MOUNT_DISK_FAIL
+
+    ASET 8
+    AND 0
+    ADD 1
+    JMP MOUNT_DISK_END
+
+    MOUNT_DISK_FAIL:
     ASET 8
     AND 0
 
     MOUNT_DISK_END:
+    LAh FSBUF_MOUNTED
+    LAl FSBUF_MOUNTED
+    ST
     ASET 10
     OS_SYSCALL_RET
+
+
+;
+; Initialise the filesystem driver: mount disk 0 and reset the
+; working directory to the root.
+;
+; Volatile registers:
+; $a8-$a15
+;
+INIT:
+    ASET 8
+    OS_LOCALSYSCALL MOUNT_DISK
+    ASET 8
+    OS_LOCALSYSCALL PATH_RESET
+    ASET 8
+    OS_SYSCALL_RET
+
+
+;
+; Print a notice if no filesystem is mounted.
+;
+; Volatile registers:
+; $a8-$a10
+;
+NOTICE:
+    LAh FSBUF_MOUNTED
+    LAl FSBUF_MOUNTED
+    ASET 8
+    LD
+    BRnp NOTICE_END
+    LARh NO_FS_MSG
+    ASET 9
+    LARl NO_FS_MSG
+    ASET 10
+    OS_SYSCALL LIBDISP_PUTSTR
+    NOTICE_END:
+    ASET 8
+    OS_SYSCALL_RET
+
+
+;
+; Reset the working directory to the root.
+;
+; Volatile registers:
+; $a8
+;
+PATH_RESET:
+    LAh FSBUF_PATH_DEPTH
+    LAl FSBUF_PATH_DEPTH
+    ASET 8
+    AND 0
+    ADD 1
+    ST
+    OS_SYSCALL_RET
+
+NO_FS_MSG: .stringz "NO FILESYSTEM - TYPE FORMAT\n"
+
+
+; ===============================================
+;                SEGMENT BOUNDARY
+; ===============================================
+.padseg 0
+
+;
+; Read a disk sector into a memory segment.
+; $a8  - The track number
+; $a9  - The sector number
+; $a10 - The destination memory segment
+;
+; Volatile registers:
+; $a8-$a11
+;
+READ_SECTOR:
+    ASET 8
+    PORTOUT_DISK_TRACKSEL
+    ASET 10
+    SPUSH
+    ASET 9
+    SPUSH
+    ASET 8
+    SPOP           ; $a8 = sector
+    ASET 9
+    SPOP           ; $a9 = destination segment
+    ASET 10
+    OS_SYSCALL DISKIO_COPYFROMDSK
+    ASET 10
+    OS_SYSCALL_RET
+
+
+;
+; Write a memory segment to a disk sector.
+; Writing to track 0 is a fault (only FLUSH_BITMAP may do that).
+; $a8  - The track number
+; $a9  - The sector number
+; $a10 - The source memory segment
+;
+; Volatile registers:
+; $a8-$a11
+;
+WRITE_SECTOR:
+    ASET 8
+    BRnp WRITE_SECTOR_OK
+    OS_SYSJUMP DISKIO_TRACKNUM_ERROR
+    WRITE_SECTOR_OK:
+    PORTOUT_DISK_TRACKSEL
+    ASET 10
+    SPUSH
+    ASET 8
+    SPOP           ; $a8 = source segment, $a9 = sector
+    ASET 10
+    OS_SYSCALL DISKIO_COPYTODSK
+    ASET 10
+    OS_SYSCALL_RET
+
+
+;
+; Create an empty filesystem on the boot disk. The volume
+; information sector is left untouched.
+;
+; Returns:
+; $a8 - Status (always 0)
+;
+; Volatile registers:
+; $a8-$a15
+;
+FORMAT:
+    ; Clear the bitmap, then mark track 0 and the root directory as allocated
+    ASET 8
+    LARh FSMEM_VOL_BITMAP
+    ASET 9
+    AND 0
+    ASET 10
+    OS_SYSCALL MEMUTIL_SEGSET
+
+    ASET 8
+    LARh FSMEM_VOL_BITMAP
+    ASET 9
+    AND 0
+    ASET 10
+    LARl 8
+    ASET 11
+    LARl 0xFF
+    ASET 12
+    OS_SYSCALL MEMUTIL_MEMSET
+
+    LAh FSMEM_VOL_BITMAP
+    LAl 8
+    ASET 8
+    AND 0
+    ADD 1
+    ST
+
+    ; Write an empty root directory
+    ASET 8
+    LARh FSBUF_DATABUF
+    ASET 9
+    AND 0
+    ASET 10
+    OS_SYSCALL MEMUTIL_SEGSET
+
+    ASET 8
+    AND 0
+    ADD 1
+    ASET 9
+    AND 0
+    ASET 10
+    LARh FSBUF_DATABUF
+    ASET 11
+    OS_LOCALSYSCALL WRITE_SECTOR
+
+    ASET 8
+    OS_SYSCALL DISKALLOC_FLUSH_BITMAP
+
+    ASET 8
+    OS_SYSCALL PATH_RESET
+
+    LAh FSBUF_MOUNTED
+    LAl FSBUF_MOUNTED
+    ASET 8
+    AND 0
+    ADD 1
+    ST
+
+    AND 0
+    ASET 9
+    OS_SYSCALL_RET
+
