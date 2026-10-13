@@ -135,6 +135,132 @@ PUTNUM:
 
     OS_SYSCALL_RET
 
+; Write a 16 bit unsigned number to the display in decimal
+; (no leading zeros)
+; $a8 - The high byte of the number
+; $a9 - The low byte of the number
+;
+; Volatile registers:
+; $a8 - $a15
+;
+PUTNUM16:
+    ASET 13            ; $a13 = non-zero once a digit has been printed
+    AND 0
+    ASET 14
+    LARl P16_POWERS
+    SPUSH              ; The power table pointer lives on the stack
+
+    P16_POWER:
+        ; $a10:$a11 = the next negated power of ten (high byte 0 = end)
+        ASET 14
+        SPOP
+        SPUSH
+        STal
+        LAh P16_POWERS
+        ASET 10
+        LD
+        BRz P16_LAST
+        ASET 14
+        ADD 1
+        STal
+        ASET 11
+        LD
+        ASET 12        ; $a12 = digit
+        AND 0
+
+        P16_TRY:
+            ; Trial subtraction: ($a8:$a9) + ($a10:$a11). It carries out
+            ; exactly when the number is >= the power.
+            ASET 9
+            SPUSH
+            ASET 11
+            SPUSH
+            ASET 14
+            SPOP
+            SPOP ADD       ; low byte sum, O = carry 1
+            SPUSH
+            PRTin 4
+            SHFr 3         ; $a14 = carry 1
+            ASET 10
+            SPUSH
+            ASET 8
+            SPUSH
+            ASET 15
+            SPOP
+            SPOP ADD       ; high byte sum, O = carry A
+            SPUSH
+            PRTin 4
+            SHFr 3         ; $a15 = carry A
+            ASET 14
+            SPOP ADD       ; high byte sum + carry 1, O = carry B
+            SPUSH
+            PRTin 4
+            SHFr 3         ; $a14 = carry B
+            ASET 15
+            SPUSH
+            ASET 14
+            SPOP OR        ; Carry out of the 16 bit addition
+            BRz P16_TRY_FAIL
+
+            ASET 8         ; Keep the difference and count the digit
+            SPOP
+            ASET 9
+            SPOP
+            ASET 12
+            ADD 1
+            JMP P16_TRY
+
+        P16_TRY_FAIL:
+        SPOP
+        SPOP
+
+        ; Print the digit, unless it is a leading zero
+        ASET 12
+        BRnp P16_PRINT
+        ASET 13
+        BRz P16_NEXT
+        P16_PRINT:
+        ASET 13
+        OR 1
+        ASET 12
+        SPUSH
+        ASET 14
+        LARl 0x30
+        SPOP ADD
+        PORTOUT_TTY_WRITE
+
+        P16_NEXT:
+        ASET 14
+        SPOP
+        ADD 2
+        SPUSH
+        JMP P16_POWER
+
+    P16_LAST:
+    ASET 14
+    SPOP
+    ASET 9             ; The remaining units digit is always printed
+    SPUSH
+    ASET 14
+    LARl 0x30
+    SPOP ADD
+    PORTOUT_TTY_WRITE
+
+    ASET 14
+    OS_SYSCALL_RET
+
+; -10000, -1000, -100, -10 as 16 bit values (high byte first), then 0
+P16_POWERS:
+.fill 0xD8
+.fill 0xF0
+.fill 0xFC
+.fill 0x18
+.fill 0xFF
+.fill 0x9C
+.fill 0xFF
+.fill 0xF6
+.fill 0x00
+
 ; Reset the TTY
 ;
 ; Volatile registers:

@@ -20,6 +20,7 @@
 ;  4 - Bad name              10 - Directory not empty
 ;  5 - Directory full        11 - Path too deep
 ;  6 - Disk full             12 - Missing argument
+;                            13 - No such disk
 ;
 
 #name "fs"
@@ -39,7 +40,8 @@
 ; Mount the filesystem on the currently selected disk.
 ; The disk is valid if its signature is correct, track 0 is marked
 ; as allocated (bitmap byte 0 is 0xFF) and the root directory
-; (track 1, sector 0) is allocated. Sets FSBUF_MOUNTED.
+; (track 1, sector 0) is allocated. Sets FSBUF_MOUNTED, and
+; FSBUF_VOLSTATE to 0 (mounted), 1 (no signature) or 2 (not formatted).
 ;
 ; Returns:
 ; $a8 - Non-zero if the disk was mounted successfully, zero otherwise.
@@ -92,11 +94,21 @@ MOUNT_DISK:
     SPOP XOR
     SPOP XOR
     ADD 1 ; Adding 1 will make it zero if the result was 0xFF (The only valid result)
-    BRnp MOUNT_DISK_FAIL
+    BRz MOUNT_DISK_SIG_OK
+    ASET 10        ; $a10 = volume state 1: no signature
+    AND 0
+    ADD 1
+    JMP MOUNT_DISK_FAIL
+
+    MOUNT_DISK_SIG_OK:
+    ASET 10        ; $a10 = volume state 2 (not formatted) if a check below fails
+    AND 0
+    ADD 2
 
     ; Track 0 must be allocated
     LAh FSMEM_VOL_BITMAP
     LAl 0
+    ASET 9
     LD
     NOT
     BRnp MOUNT_DISK_FAIL
@@ -107,6 +119,8 @@ MOUNT_DISK:
     AND 1
     BRz MOUNT_DISK_FAIL
 
+    ASET 10        ; Volume state 0: mounted
+    AND 0
     ASET 8
     AND 0
     ADD 1
@@ -120,7 +134,10 @@ MOUNT_DISK:
     LAh FSBUF_MOUNTED
     LAl FSBUF_MOUNTED
     ST
+    LAl FSBUF_VOLSTATE
     ASET 10
+    ST
+    ASET 11
     OS_SYSCALL_RET
 
 
@@ -213,7 +230,8 @@ READ_SECTOR:
 
 ;
 ; Write a memory segment to a disk sector.
-; Writing to track 0 is a fault (only FLUSH_BITMAP may do that).
+; Writing to track 0 is a fault (only DISKALLOC_FLUSH_BITMAP and
+; FSFORMAT_FLUSH_VOLINFO write there).
 ; $a8  - The track number
 ; $a9  - The sector number
 ; $a10 - The source memory segment
@@ -235,77 +253,3 @@ WRITE_SECTOR:
     OS_SYSCALL DISKIO_COPYTODSK
     ASET 10
     OS_SYSCALL_RET
-
-
-;
-; Create an empty filesystem on the boot disk. The volume
-; information sector is left untouched.
-;
-; Returns:
-; $a8 - Status (always 0)
-;
-; Volatile registers:
-; $a8-$a15
-;
-FORMAT:
-    ; Clear the bitmap, then mark track 0 and the root directory as allocated
-    ASET 8
-    LARh FSMEM_VOL_BITMAP
-    ASET 9
-    AND 0
-    ASET 10
-    OS_SYSCALL MEMUTIL_SEGSET
-
-    ASET 8
-    LARh FSMEM_VOL_BITMAP
-    ASET 9
-    AND 0
-    ASET 10
-    LARl 8
-    ASET 11
-    LARl 0xFF
-    ASET 12
-    OS_SYSCALL MEMUTIL_MEMSET
-
-    LAh FSMEM_VOL_BITMAP
-    LAl 8
-    ASET 8
-    AND 0
-    ADD 1
-    ST
-
-    ; Write an empty root directory
-    ASET 8
-    LARh FSBUF_DATABUF
-    ASET 9
-    AND 0
-    ASET 10
-    OS_SYSCALL MEMUTIL_SEGSET
-
-    ASET 8
-    AND 0
-    ADD 1
-    ASET 9
-    AND 0
-    ASET 10
-    LARh FSBUF_DATABUF
-    ASET 11
-    OS_LOCALSYSCALL WRITE_SECTOR
-
-    ASET 8
-    OS_SYSCALL DISKALLOC_FLUSH_BITMAP
-
-    ASET 8
-    OS_SYSCALL PATH_RESET
-
-    LAh FSBUF_MOUNTED
-    LAl FSBUF_MOUNTED
-    ASET 8
-    AND 0
-    ADD 1
-    ST
-
-    AND 0
-    ASET 9
-    OS_SYSCALL_RET
-

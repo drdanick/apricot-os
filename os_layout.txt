@@ -66,14 +66,14 @@ x29  |  41 | Filesystem rename (MV)
 x2A  |  42 | Filesystem copy (CP)
 x2B  |  43 | Filesystem copy
 x2C  |  44 | Filesystem copy helpers
-x2D  |  45 |
-x2E  |  46 |
-x2F  |  47 |
-x30  |  48 |
-x31  |  49 |
-x32  |  50 |
-x33  |  51 |
-x34  |  52 |
+x2D  |  45 | Filesystem statistics (FSSTAT)
+x2E  |  46 | Filesystem statistics (FSSTAT)
+x2F  |  47 | Filesystem format (FORMAT)
+x30  |  48 | Filesystem format helpers
+x31  |  49 | Filesystem format helpers
+x32  |  50 | Disk commands (DISKSEL)
+x33  |  51 | Disk commands (DISKSTAT)
+x34  |  52 | Disk commands (strings)
 x35  |  53 |
 x36  |  54 |
 x37  |  55 |

@@ -9,6 +9,8 @@ The Apricot OS shell reads one line at a time (up to 128 characters) and convert
 | [`ECHO`](#echo-text) | Print text |
 | [`CLS`](#cls) | Clear the screen |
 | [`MEMEXEC`](#memexec-address) | Run code at a memory address |
+| [`DISKSEL`](#disksel-n) | Select a disk |
+| [`DISKSTAT`](#diskstat) | Show the selected disk and its volume information |
 | [`LS`](#ls) | List the current directory |
 | [`CD`](#cd-name--cd---cd-) | Change the current directory |
 | [`PWD`](#pwd) | Print the current directory |
@@ -19,7 +21,8 @@ The Apricot OS shell reads one line at a time (up to 128 characters) and convert
 | [`RM`](#rm-name) | Delete a file or an empty directory |
 | [`MV`](#mv-old-new) | Rename a file or directory |
 | [`CP`](#cp-src-dst) | Copy a file |
-| [`FORMAT`](#format) | Create an empty filesystem on the boot disk |
+| [`FSSTAT`](#fsstat) | Show the filesystem's status and free space |
+| [`FORMAT`](#format-name) | Create an empty filesystem on the selected disk |
 
 
 General commands
@@ -54,10 +57,51 @@ Hello! You have just executed ApricotOS' first program!
 ```
 
 
+Disk commands
+-------------
+
+The simulator provides up to 9 disks, numbered 0 to 8. Disk N is the file `N.dsk` in the simulator's working directory. The OS boots from disk 0, which is selected at startup.
+
+### `DISKSEL N`
+
+Selects disk N (0–8) and mounts its filesystem. The current directory becomes `/`. If the new disk has no filesystem, the OS prints `NO FILESYSTEM - TYPE FORMAT`, and the filesystem commands report `NO FILESYSTEM` until you run `FORMAT`.
+
+If `N.dsk` doesn't exist, the current disk stays selected and nothing changes.
+
+```
+>DISKSEL 2
+>LS
+HELLO
+STUFF/
+>DISKSEL 3
+ERROR: NO SUCH DISK
+```
+
+Errors: `MISSING ARGUMENT`; `NO SUCH DISK` (N isn't a single digit 0–8, or `N.dsk` doesn't exist).
+
+### `DISKSTAT`
+
+Shows the selected disk and the volume information stored on it:
+
+```
+>DISKSTAT
+DISK:      0
+SIGNATURE: VALID
+VOLUME:    APRICOT
+BOOTABLE:  YES
+```
+
+- `SIGNATURE` is `VALID` if the disk has the Apricot disk signature. If it is `INVALID`, nothing else is printed.
+- `VOLUME` is the volume name, or `(NONE)` if it is empty.
+- `BOOTABLE` is `YES` if the volume information carries the boot signature.
+
+If no disk is selected, it prints `NO DISK`.
+
+
 Filesystem commands
 -------------------
 
-These commands work on the boot disk (disk 0), relative to the current directory.
+These commands work on the selected disk, relative to the current directory.
 
 ### Rules shared by all filesystem commands
 
@@ -97,8 +141,9 @@ A name breaking these rules gives `ERROR: BAD NAME`; it is never shortened. A fi
 | `DIRECTORY NOT EMPTY` | `RM` was given a directory with entries in it |
 | `PATH TOO DEEP` | `CD` would go past 15 levels |
 | `MISSING ARGUMENT` | A required name or text is missing |
+| `NO SUCH DISK` | `DISKSEL` was given a disk that doesn't exist |
 
-**No filesystem:** if the boot disk has no filesystem, the OS prints `NO FILESYSTEM - TYPE FORMAT` after the shell's greeting.
+**No filesystem:** if the boot disk has no filesystem, the OS prints `NO FILESYSTEM - TYPE FORMAT` after the shell's greeting. `DISKSEL` prints the same notice when it selects a disk without one.
 
 
 
@@ -193,14 +238,48 @@ Errors: `MISSING ARGUMENT`, `BAD NAME`, `NOT FOUND`, `NOT A FILE`, `ALREADY EXIS
 
 Copying a large file is slow: a maximum-size file takes about a minute. Wait for the prompt before typing again, because keys typed while the OS is busy are lost.
 
-### `FORMAT`
+### `FSSTAT`
 
-Erases the boot disk and creates an empty filesystem, then returns to `/`.
+Shows whether the selected disk has a filesystem, and how much of it is used. Sizes cover tracks 1–31, the part of the disk available for files; KB values are rounded down.
 
-**It doesn't ask for confirmation, and every file and directory is lost.** The OS itself and the volume name are kept.
+```
+>FSSTAT
+FILESYSTEM: OK
+USED:       7 SECTORS (1 KB)
+FREE:       1977 SECTORS (494 KB)
+TOTAL:      1984 SECTORS (496 KB)
+```
 
-This is the only filesystem command that works on a disk without a filesystem. Use it to set up a disk image built by `assemble.sh`, which has no filesystem.
+If there is no usable filesystem, only the `FILESYSTEM` line is printed:
 
+| Status | Meaning |
+| ------ | ------- |
+| `NOT FORMATTED` | The disk has a signature but no filesystem; run `FORMAT` |
+| `NO SIGNATURE` | The disk is blank or isn't an Apricot disk; run `FORMAT` |
+| `NO DISK` | No disk is selected |
+
+### `FORMAT [NAME]`
+
+Erases the selected disk and creates an empty filesystem, then returns to `/`. It asks for confirmation first:
+
+```
+>FORMAT DATA
+FORMAT DISK 1? (Y/N) Y
+```
+
+Press `Y` to go ahead. **Any other key, including Enter, cancels** and prints `CANCELLED`. Only one key is read; you don't need to press Enter after it.
+
+**Every file and directory on the disk is lost.** The OS boot code on the disk is kept.
+
+The volume information is handled as follows:
+
+- **NAME** (optional, up to 8 characters, no spaces) sets the volume name. Without it, the existing name is kept.
+- **On a disk with no signature**, such as a blank disk, FORMAT writes the signature and the name (`APRICOT` if no NAME is given). The disk isn't marked bootable.
+- **The boot flag** is never changed: a bootable disk stays bootable.
+
+This is the only filesystem command that works on a disk without a filesystem. Use it to set up a blank disk, or a disk image built by `assemble.sh`, which has no filesystem.
+
+Errors: `BAD NAME` (NAME is longer than 8 characters).
 
 Example session
 ---------------

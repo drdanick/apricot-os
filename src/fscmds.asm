@@ -29,6 +29,7 @@
 #include "fswrite.asm"
 #include "fsdel.asm"
 #include "fscopy.asm"
+#include "fsformat.asm"
 
 
 ;=========================================
@@ -112,10 +113,16 @@ CP:
     LARl FSCOPY_COPY
     JMP RUN_FS
 
-; FORMAT is the only command that works without a mounted filesystem
+; FORMAT works without a mounted filesystem
 FORMAT:
     ASET 8
-    OS_SYSCALL FS_FORMAT
+    SPUSH
+    ASET 9
+    SPOP
+    ASET 8
+    LARh SHELLMEM_CMDBUFF
+    ASET 10
+    OS_SYSCALL FSFORMAT_FORMAT
     JMP FINISH
 
 
@@ -196,14 +203,9 @@ LIST:
 
 
 
-; ===============================================
-;                SEGMENT BOUNDARY
-; ===============================================
-.padseg 0
-
 ;
 ; Print "ERROR: <message>" for a status code.
-; $a8 - The status code (1-12)
+; $a8 - The status code (1-13)
 ;
 ; Volatile registers:
 ; $a8-$a10
@@ -231,7 +233,14 @@ PRINT_ERROR:
     ASET 8
     OS_SYSCALL_RET
 
-; Error messages, indexed by status code. Must stay in one segment.
+
+; ===============================================
+;                SEGMENT BOUNDARY
+; ===============================================
+.padseg 0
+
+; Error messages, indexed by status code. The table and the strings must
+; stay in one segment (PRINT_ERROR only sets the low byte of the address).
 ERR_TABLE:
 .nearptr ERR_PREFIX
 .nearptr ERR_1
@@ -246,6 +255,7 @@ ERR_TABLE:
 .nearptr ERR_10
 .nearptr ERR_11
 .nearptr ERR_12
+.nearptr ERR_13
 
 ERR_PREFIX: .stringz "ERROR: "
 ERR_1:  .stringz "NO FILESYSTEM\n"
@@ -260,3 +270,4 @@ ERR_9:  .stringz "NOT A FILE\n"
 ERR_10: .stringz "DIRECTORY NOT EMPTY\n"
 ERR_11: .stringz "PATH TOO DEEP\n"
 ERR_12: .stringz "MISSING ARGUMENT\n"
+ERR_13: .stringz "NO SUCH DISK\n"

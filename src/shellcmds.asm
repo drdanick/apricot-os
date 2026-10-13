@@ -25,6 +25,8 @@
 #include "math.asm"
 #include "portout.asm"
 #include "fscmds.asm"
+#include "fsstat.asm"
+#include "diskcmds.asm"
 
 #macro SHELLCMD_RET {
     SPOP
@@ -59,6 +61,9 @@ CMD_ARRAY:
 .nearptr WRITE_H
 .nearptr MEMEXEC_H
 .nearptr FORMAT_H
+.nearptr FSSTAT_H
+.nearptr DISKSEL_H
+.nearptr DISKSTAT_H
 .nearptr HELP_H
 .fill 0
 
@@ -128,6 +133,18 @@ FORMAT_H:
 .farptr FSCMDS_FORMAT
 .stringz "FORMAT"
 
+FSSTAT_H:
+.farptr FSSTAT_FSSTAT
+.stringz "FSSTAT"
+
+DISKSEL_H:
+.farptr DISKCMDS_DISKSEL
+.stringz "DISKSEL"
+
+DISKSTAT_H:
+.farptr DISKCMDS_DISKSTAT
+.stringz "DISKSTAT"
+
 HELP_H:
 .farptr HELP
 .stringz "HELP"
@@ -167,6 +184,11 @@ CLS:
     AND 0
     PORTOUT_TTY_WRITE
     SHELLCMD_RET
+
+; ===============================================
+;                SEGMENT BOUNDARY
+; ===============================================
+.padseg 0
 
 ECHO:
     ASET 8
@@ -213,11 +235,6 @@ MEMEXEC:
     OS_SYSCALL OSUTIL_POPALLREGS
     SHELLCMD_RET
 
-
-; ===============================================
-;                SEGMENT BOUNDARY
-; ===============================================
-.padseg 0
 
 HELP: 
     ASET 8

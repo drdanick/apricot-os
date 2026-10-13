@@ -39,6 +39,9 @@ $APRICOSASM_CMD -ldsh \
     fswrite.asm \
     fsdel.asm \
     fscopy.asm \
+    fsstat.asm \
+    fsformat.asm \
+    diskcmds.asm \
     fscmds.asm \
     testprogram.asm \
     && mv -f link.bin ${BUILD_DIR}/0.dsk && mv -f symbols.sym $BUILD_DIR && mv -f hints.dbg $BUILD_DIR
