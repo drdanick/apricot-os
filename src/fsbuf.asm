@@ -12,12 +12,12 @@
 ;
 
 #name "fsbuf"
-#segment 30
+#segment 29
 
-; NOTE: This data spans five segments (30-34)
+; NOTE: This data spans five segments (29-33)
 
 ;
-; Segment 30: driver state
+; Segment 29: driver state
 ;
 MOUNTED:    .fill 0          ; Non-zero if a valid filesystem is mounted
 PATH_DEPTH: .fill 1          ; Number of entries on the path stack (1 = root only)
@@ -36,25 +36,25 @@ PATH_STACK:
 .blockw 126 0
 
 ;
-; Segment 31: copy of the working directory's sector
+; Segment 30: copy of the working directory's sector
 ;
 DIRBUF:
 .padseg 0x00
 
 ;
-; Segment 32: file metadata sector
+; Segment 31: file metadata sector
 ;
 METABUF:
 .padseg 0x00
 
 ;
-; Segment 33: file data sector
+; Segment 32: file data sector
 ;
 DATABUF:
 .padseg 0x00
 
 ;
-; Segment 34: second file metadata sector (CP source)
+; Segment 33: second file metadata sector (CP source)
 ;
 METABUF2:
 .padseg 0x00

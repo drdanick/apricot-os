@@ -13,7 +13,7 @@
 ;
 
 #name "fswrite"
-#segment 35
+#segment 34
 
 #include "apricotosint.asm"
 #include "osutil.asm"

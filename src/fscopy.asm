@@ -8,7 +8,7 @@
 ;
 
 #name "fscopy"
-#segment 43
+#segment 42
 
 #include "apricotosint.asm"
 #include "osutil.asm"

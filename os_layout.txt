@@ -42,31 +42,31 @@ x11  |  17 | Filesystem driver (mount, init)
 x12  |  18 | Filesystem driver (sector IO, format)
 x13  |  19 | Filesystem volume information paging area
 x14  |  20 | Filesystem bitmap paging area
-x15  |  21 | Test program (memexec 1500)
+x15  |  21 | Filesystem directory routines
 x16  |  22 | Filesystem directory routines
-x17  |  23 | Filesystem directory routines
-x18  |  24 | Filesystem working directory (CD)
-x19  |  25 | Filesystem working directory (PWD)
-x1A  |  26 | Filesystem file reading (CAT)
-x1B  |  27 | Filesystem file reading
-x1C  |  28 | Filesystem shell commands
-x1D  |  29 | Filesystem shell commands (error messages)
-x1E  |  30 | Filesystem state and path stack
-x1F  |  31 | Filesystem directory buffer
-x20  |  32 | Filesystem metadata buffer
-x21  |  33 | Filesystem data buffer
-x22  |  34 | Filesystem second metadata buffer (CP)
-x23  |  35 | Filesystem create (TOUCH, MKDIR)
-x24  |  36 | Filesystem WRITE
-x25  |  37 | Filesystem append
+x17  |  23 | Filesystem working directory (CD)
+x18  |  24 | Filesystem working directory (PWD)
+x19  |  25 | Filesystem file reading (CAT)
+x1A  |  26 | Filesystem file reading
+x1B  |  27 | Filesystem shell commands
+x1C  |  28 | Filesystem shell commands (error messages)
+x1D  |  29 | Filesystem state and path stack
+x1E  |  30 | Filesystem directory buffer
+x1F  |  31 | Filesystem metadata buffer
+x20  |  32 | Filesystem data buffer
+x21  |  33 | Filesystem second metadata buffer (CP)
+x22  |  34 | Filesystem create (TOUCH, MKDIR)
+x23  |  35 | Filesystem WRITE
+x24  |  36 | Filesystem append
+x25  |  37 | Filesystem append helpers
 x26  |  38 | Filesystem append helpers
-x27  |  39 | Filesystem append helpers
-x28  |  40 | Filesystem remove (RM)
-x29  |  41 | Filesystem remove helpers, argument parsing
-x2A  |  42 | Filesystem rename (MV)
-x2B  |  43 | Filesystem copy (CP)
-x2C  |  44 | Filesystem copy
-x2D  |  45 | Filesystem copy helpers
+x27  |  39 | Filesystem remove (RM)
+x28  |  40 | Filesystem remove helpers, argument parsing
+x29  |  41 | Filesystem rename (MV)
+x2A  |  42 | Filesystem copy (CP)
+x2B  |  43 | Filesystem copy
+x2C  |  44 | Filesystem copy helpers
+x2D  |  45 |
 x2E  |  46 |
 x2F  |  47 |
 x30  |  48 |
@@ -82,7 +82,7 @@ x39  |  57 |
 x3A  |  58 |
 x3B  |  59 |
 x3C  |  60 |
-x3D  |  61 |
+x3D  |  61 | Test program (memexec 3D00)
 x3E  |  62 |
 x3F  |  63 |
 x40  |  64 |

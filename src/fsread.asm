@@ -13,7 +13,7 @@
 ;
 
 #name "fsread"
-#segment 26
+#segment 25
 
 #include "apricotosint.asm"
 #include "osutil.asm"

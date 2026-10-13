@@ -16,7 +16,7 @@
 ;
 
 #name "fspath"
-#segment 24
+#segment 23
 
 #include "apricotosint.asm"
 #include "memutil.asm"

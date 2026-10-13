@@ -8,7 +8,7 @@
 ;
 
 #name "fsdel"
-#segment 40
+#segment 39
 
 #include "apricotosint.asm"
 #include "osutil.asm"

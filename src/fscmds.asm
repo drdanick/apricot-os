@@ -16,7 +16,7 @@
 ;
 
 #name "fscmds"
-#segment 28
+#segment 27
 
 #include "apricotosint.asm"
 #include "shellmem.asm"

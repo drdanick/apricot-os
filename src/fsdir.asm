@@ -20,7 +20,7 @@
 ;
 
 #name "fsdir"
-#segment 22
+#segment 21
 
 #include "apricotosint.asm"
 #include "osutil.asm"
