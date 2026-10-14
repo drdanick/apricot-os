@@ -118,6 +118,14 @@ error messages.
 A disk image produced by `assemble.sh` contains no filesystem. Boot it and enter `format` to create one.
 
 
+Testing
+-------
+
+An automated test suite in [tests/](tests/README.md) builds the OS, boots it headlessly in the simulator, and checks
+every shell command, the filesystem, and the library routines. Run it with `tox` from the `tests/` directory; see
+[tests/README.md](tests/README.md) for requirements and options.
+
+
 License
 -------
 
