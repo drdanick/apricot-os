@@ -14,6 +14,9 @@
 ;       that of SHELLMEM_CMDBUFF)
 ; and the shell's return address on the stack.
 ;
+; Segment 27: handlers, RUN_FS, FINISH, LIST, PRINT_ERROR
+; Segment 28: error table and messages
+;
 
 #name "fscmds"
 #segment 27
@@ -121,7 +124,7 @@ STAT:
     LARl FSINFO_STAT
     JMP RUN_FS
 
-; FORMAT works without a mounted filesystem
+; FORMAT works without a mounted filesystem, so it skips RUN_FS
 FORMAT:
     ASET 8
     SPUSH
@@ -140,6 +143,8 @@ FORMAT:
 ; $a10 - The segment of the routine
 ; $a11 - The segment local address of the routine
 ;
+; Never returns to its caller: it ends in FINISH, which returns to the shell.
+;
 RUN_FS:
     ASET 8
     SPUSH
@@ -153,7 +158,8 @@ RUN_FS:
     BRz NOT_MOUNTED
     LARh SHELLMEM_CMDBUFF
 
-    ; Call $a10:$a11
+    ; Call $a10:$a11: OS_SYSCALL expanded by hand, since the target is in
+    ; registers rather than a label
     ASET 12
     LDI RUN_FS_RET
     LDah
@@ -173,11 +179,15 @@ NOT_MOUNTED:
     ASET 8
     AND 0
     ADD 1
+    ; Falls through into FINISH
 
 ;
 ; Common handler exit: print an error message if the status is
 ; non-zero, then return to the shell.
 ; $a8 - The status code
+;
+; Shell handlers outside this unit (DISKSEL, FSSTAT) reach it with
+; OS_SYSJUMP FSCMDS_FINISH.
 ;
 FINISH:
     ASET 8
@@ -227,6 +237,7 @@ PRINT_ERROR:
     ASET 10
     OS_SYSCALL LIBDISP_PUTSTR
 
+    ; Look up ERR_TABLE[status] (entry 0, the prefix, is never used)
     ASET 9
     LARl ERR_TABLE
     SPOP ADD

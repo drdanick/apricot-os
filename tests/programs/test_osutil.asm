@@ -172,6 +172,7 @@ COPY_TEST:
     TM_SET 13 0x5D
     TM_SET 14 0x5E
     OS_CALLFUNC OSUTIL_PUSHREGSANDCOPY
+    ; The stack now holds the saved $a0-$a7 until POPREGS below
     TM_LABEL T_COPY
     TM_PREG 0
     TM_PREG 1

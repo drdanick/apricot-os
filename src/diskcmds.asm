@@ -12,6 +12,9 @@
 ; address of the argument string (in SHELLMEM_CMDBUFF's segment) and the
 ; shell's return address on the stack.
 ;
+; Segment 50: DISKSEL, PS, strings (the strings must stay in PS's segment)
+; Segment 51: DISKSTAT
+;
 
 #name "diskcmds"
 #segment 50
@@ -31,12 +34,13 @@
 ; DISKSEL N: select disk N (0-8) and mount its filesystem, with the root
 ; as the working directory. If N.dsk doesn't exist, the current disk
 ; stays selected and the status is 13 (no such disk).
+; Ends through FSCMDS_FINISH, which prints any error and returns to the shell.
 ;
 DISKSEL:
     ASET 8
     SPUSH
     ASET 9
-    SPOP
+    SPOP           ; $a9 = argument address
     LAh SHELLMEM_CMDBUFF
     STal
     ASET 10
@@ -77,7 +81,7 @@ DISKSEL:
     ; Not selected. An older simulator closes the current disk when a
     ; select fails: reselect the old disk if nothing is selected now.
     ASET 12
-    NOT
+    NOT            ; Zero if the status is 0xFF (no disk open)
     BRnp DS_BAD
     ASET 11
     PORTOUT_DISK_SEL
@@ -141,12 +145,13 @@ S_NODISK:  .stringz "NO DISK\n"
 ;
 ; DISKSTAT: print the selected disk and its volume information:
 ; the disk number, whether the signature is valid, the volume name and
-; whether the disk is bootable.
+; whether the disk is bootable. The volume information comes from the
+; last mount (FSBUF_VOLSTATE, FSMEM_VOL_INFO); the disk isn't read again.
 ;
 DISKSTAT:
     ASET 8
     PORTIN_DISK_STATUS
-    NOT
+    NOT            ; Zero if the status is 0xFF (no disk open)
     BRnp DT_HAVE_DISK
     ASET 9
     LARl S_NODISK
@@ -163,7 +168,7 @@ DISKSTAT:
     PORTIN_DISK_STATUS
     SPUSH
     LARl 0x30
-    SPOP ADD
+    SPOP ADD       ; Disk number as a digit (disks are 0-8)
     PORTOUT_TTY_WRITE
     LARl 0x0A
     PORTOUT_TTY_WRITE

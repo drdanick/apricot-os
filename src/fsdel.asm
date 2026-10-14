@@ -6,6 +6,10 @@
 ; ==                               ==
 ; ===================================
 ;
+; Segment 39: REMOVE (RM)
+; Segment 40: RM_FREE, SPLIT_ARG, PARSE_TWO (also used by fscopy)
+; Segment 41: RENAME (MV)
+;
 
 #name "fsdel"
 #segment 39
@@ -69,6 +73,7 @@ REMOVE:
     ASET 1
     LD             ; $a1 = flags byte
 
+    ; $a2, $a3 = the entry's track and sector
     ASET 8
     LARh FSBUF_DIRBUF
     ASET 0
@@ -99,7 +104,7 @@ REMOVE:
     SHFl 2
     BRn RM_UNLINK  ; Files can always be removed
 
-    ; A directory must be empty
+    ; A directory must be empty: no entry may have bit 7 (in use) set
     LAh FSBUF_METABUF
     ASET 8
     AND 0
@@ -160,7 +165,8 @@ REMOVE:
 ; $a2, $a3) and flush the bitmap. Uses REMOVE's $a0-$a3.
 ;
 RM_FREE:
-    ; Free a file's data sectors
+    ; Free a file's data sectors: walk the (track, sector) pairs at
+    ; offsets 2, 4, ... 254 until the offset wraps to 0
     ASET 1
     SPUSH
     ASET 8
@@ -236,7 +242,7 @@ SPLIT_ARG:
         SPUSH
         ASET 13
         LARl 0xE0
-        SPOP ADD
+        SPOP ADD       ; c - 0x20: zero for a space
         BRz SA_FOUND
         ASET 11
         ADD 1
@@ -244,7 +250,7 @@ SPLIT_ARG:
 
     SA_FOUND:
     ASET 12
-    AND 0
+    AND 0          ; $a12 = status 0, and the NUL to store
     ST
     ASET 11
     ADD 1
@@ -299,7 +305,7 @@ PARSE_TWO:
     ASET 9
     SPOP
     ASET 10
-    SPOP
+    SPOP           ; $a10:$a9 = second word
     ASET 8
     BRnp PT_RET
     ASET 10

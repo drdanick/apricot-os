@@ -12,8 +12,8 @@
 #include "diskio.asm"
 
     ASET 8
-    LAR 64
+    LAR 64             ; Sector 64: out of range (0-63)
     ASET 9
-    LAR 0x70
+    LAR 0x70           ; Destination segment (unused memory)
     OS_CALLFUNC DISKIO_COPYFROMDSK
     OS_PROG_EXIT

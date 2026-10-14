@@ -13,10 +13,10 @@
 #include "fsdriver.asm"
 
     ASET 8
-    LAR 0
+    LAR 0              ; Track 0
     ASET 9
-    LAR 5
+    LAR 5              ; Sector 5 (OS code: must never be overwritten)
     ASET 10
-    LAR 0x70
+    LAR 0x70           ; Source segment
     OS_CALLFUNC FS_WRITE_SECTOR
     OS_PROG_EXIT

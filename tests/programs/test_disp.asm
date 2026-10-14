@@ -17,7 +17,9 @@
 #include "testlib.asm"
 #include "testmacros.asm"
 
-    ; PUTNUM: one byte per case, ended by a 0 after the first entry
+    ; PUTNUM: print every case, including the final 0 that ends the list.
+    ; $a1 = case pointer (low byte), $a3 = case. Both are callee-saved, so
+    ; they survive the calls.
     ASET 1
     LARl PUTNUM_CASES
     PUTNUM_LOOP:
@@ -85,6 +87,7 @@ PUTNUM16_CASES:
 ; ===============================================
 .padseg 0
 
+; PUTNUM16: as PUTNUM, with $a3:$a4 = the case. The list ends with (0, 0).
 PUTNUM16_TESTS:
     ASET 1
     LARl PUTNUM16_CASES

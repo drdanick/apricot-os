@@ -48,7 +48,7 @@ ENTRY_TS:
     STah
     ASET 9
     STal
-    ADD 1
+    ADD 1          ; $a9 = address of byte 1, for the sector
     ASET 10
     LARl 0x1F
     SPUSH
@@ -80,6 +80,7 @@ ENTRY_TS:
 ; $a8-$a10
 ;
 PATH_TOP:
+    ; The top entry is at FSBUF_PATH_STACK + (depth - 1) * 8
     LAh FSBUF_PATH_DEPTH
     LAl FSBUF_PATH_DEPTH
     ASET 9
@@ -145,6 +146,10 @@ STORE_CWD:
 ; Volatile registers:
 ; $a8-$a15
 ;
+; Registers:
+; $a0:$a1 - the name
+; $a2     - offset of the current entry (the loop ends when it wraps to 0)
+;
 FIND_ENTRY:
     ASET 15
     OS_SYSCALL OSUTIL_PUSHREGSANDCOPY   ; $a0:$a1 = name
@@ -158,6 +163,7 @@ FIND_ENTRY:
         LD
         BRzp FE_NEXT   ; Free slot
 
+        ; Compare the 6 name bytes (entry + 2) with the name
         ASET 0
         SPUSH
         ASET 8
@@ -224,6 +230,12 @@ FIND_ENTRY:
 ; Volatile registers:
 ; $a8-$a14
 ;
+; Registers:
+; $a8:$a9   - source pointer (stops advancing at the terminating NUL)
+; $a10:$a11 - destination pointer
+; $a12      - characters left to store, as a negative count
+; $a13      - current character
+;
 PARSE_NAME:
     ASET 12
     LARl 0xFA      ; $a12 = -6 (character counter)
@@ -242,6 +254,8 @@ PARSE_NAME:
     SPOP XOR
     BRz PN_BAD
 
+    ; Copy 6 characters. Once the source NUL is reached, the source pointer
+    ; stays on it, so the remaining destination bytes are padded with NULs.
     PN_LP:
         ASET 8
         STah
@@ -259,7 +273,7 @@ PARSE_NAME:
         SPOP ADD
         BRn PN_BAD
 
-        ; Reject 0x7F
+        ; Reject 0x7F: c + 1 is negative only for 0x7F, since c < 0x80 here
         ASET 13
         SPUSH
         ASET 14
@@ -335,7 +349,7 @@ FIND_FREE_ENTRY:
         STal
         ASET 8
         LD
-        BRzp FF_FOUND
+        BRzp FF_FOUND  ; Bit 7 clear: free slot
         ASET 9
         ADD 8
         BRnp FF_LP
@@ -359,6 +373,12 @@ FIND_FREE_ENTRY:
 ;
 ; Volatile registers:
 ; $a8-$a13
+;
+; Registers:
+; $a9  - offset of the current entry
+; $a10 - the entry's flags byte, then the character to print
+; $a11 - name characters left to print, as a negative count
+; $a12 - offset of the current name character
 ;
 LIST_DIR:
     ASET 9         ; $a9 = entry offset
@@ -393,7 +413,7 @@ LIST_DIR:
             BRnp LD_NAME
         LD_NAME_END:
 
-        ; Print the suffix
+        ; Print the suffix: shift the flag bits into bit 7 to test them
         ASET 10
         SPOP
         SPUSH

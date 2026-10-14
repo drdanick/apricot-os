@@ -12,6 +12,12 @@
 ; ==                               ==
 ; ===================================
 ;
+; Core of the filesystem driver: mounting, the no-filesystem notice, and
+; track/sector I/O wrappers used by every other fs* unit.
+;
+; Segment 17: MOUNT_DISK, INIT, NOTICE, PATH_RESET
+; Segment 18: READ_SECTOR, WRITE_SECTOR
+;
 ; Filesystem routines return a status code in $a8:
 ;  0 - OK
 ;  1 - No filesystem          7 - File too big
@@ -71,6 +77,8 @@ MOUNT_DISK:
     ; Validate the disk by checking that the first 4 bytes of
     ; this sector are 0xC0, 0x30, 0x0C, and 0x03.
     ; Xoring them together will produce 0xFF.
+    ; NOTE: this is only a checksum; other byte combinations that XOR to
+    ; 0xFF also pass (the boot loader checks the bytes exactly).
     LAh FSMEM_VOL_INFO
     LAl 0x00
     ASET 9
@@ -130,6 +138,7 @@ MOUNT_DISK:
     ASET 8
     AND 0
 
+    ; Record the result: FSBUF_MOUNTED = $a8, FSBUF_VOLSTATE = $a10
     MOUNT_DISK_END:
     LAh FSBUF_MOUNTED
     LAl FSBUF_MOUNTED
@@ -180,7 +189,8 @@ NOTICE:
 
 
 ;
-; Reset the working directory to the root.
+; Reset the working directory to the root, by truncating the path
+; stack to its root entry (FSBUF_PATH_DEPTH = 1).
 ;
 ; Volatile registers:
 ; $a8
@@ -203,7 +213,7 @@ NO_FS_MSG: .stringz "NO FILESYSTEM - TYPE FORMAT\n"
 .padseg 0
 
 ;
-; Read a disk sector into a memory segment.
+; Read a disk sector into a memory segment, on the selected disk.
 ; $a8  - The track number
 ; $a9  - The sector number
 ; $a10 - The destination memory segment
@@ -214,6 +224,7 @@ NO_FS_MSG: .stringz "NO FILESYSTEM - TYPE FORMAT\n"
 READ_SECTOR:
     ASET 8
     PORTOUT_DISK_TRACKSEL
+    ; Shuffle the arguments into DISKIO_COPYFROMDSK's order
     ASET 10
     SPUSH
     ASET 9
@@ -245,6 +256,7 @@ WRITE_SECTOR:
     OS_SYSJUMP DISKIO_TRACKNUM_ERROR
     WRITE_SECTOR_OK:
     PORTOUT_DISK_TRACKSEL
+    ; DISKIO_COPYTODSK takes (segment, sector), so only $a8 changes
     ASET 10
     SPUSH
     ASET 8

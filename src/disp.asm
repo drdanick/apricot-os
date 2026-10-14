@@ -143,6 +143,16 @@ PUTNUM:
 ; Volatile registers:
 ; $a8 - $a15
 ;
+; Makes no calls. For each power of ten it counts how many times the power
+; can be subtracted (repeated trial subtraction), then prints that digit.
+;
+; Registers:
+; $a8:$a9   - what is left of the number
+; $a10:$a11 - the current negated power of ten
+; $a12      - the current digit
+; $a13      - non-zero once a digit has been printed
+; $a14      - power table pointer / scratch; $a15 scratch
+;
 PUTNUM16:
     ASET 13            ; $a13 = non-zero once a digit has been printed
     AND 0
@@ -249,7 +259,8 @@ PUTNUM16:
     ASET 14
     OS_SYSCALL_RET
 
-; -10000, -1000, -100, -10 as 16 bit values (high byte first), then 0
+; -10000, -1000, -100, -10 as 16 bit values (high byte first), then 0.
+; Must not cross a page (PUTNUM16 keeps only the low byte of its pointer).
 P16_POWERS:
 .fill 0xD8
 .fill 0xF0

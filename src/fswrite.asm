@@ -11,6 +11,12 @@
 ; 2. flush the space bitmap,
 ; 3. write the structure that references them (directory or metadata).
 ;
+; Segment 34: TOUCH, MKDIR, CREATE
+; Segment 35: WRITE
+; Segment 36: APPEND
+; Segment 37: AP_CHECKSIZE, AP_GETBLOCK
+; Segment 38: AP_COPY
+;
 
 #name "fswrite"
 #segment 34
@@ -49,6 +55,7 @@ TOUCH:
 MKDIR:
     ASET 10
     AND 0
+    ; Falls through into CREATE
 
 ;
 ; Create an empty file or directory in the working directory.
@@ -62,6 +69,9 @@ MKDIR:
 ;
 ; Volatile registers:
 ; $a8-$a15
+;
+; Stack while running (pushed in this order): type, entry offset, track,
+; sector. The CR_POPn_RET exits pop what has been pushed so far.
 ;
 CREATE:
     ASET 10
@@ -110,7 +120,7 @@ CREATE:
     ASET 10
     OS_SYSCALL MEMUTIL_SEGSET
     ASET 9
-    SPOP
+    SPOP           ; Peek the sector and track (pop, then push them back)
     ASET 8
     SPOP
     SPUSH
@@ -231,7 +241,7 @@ WRITE:
         SPUSH
         ASET 12
         LARl 0xE0
-        SPOP ADD
+        SPOP ADD       ; c - 0x20: zero for a space
         BRz WR_SPLIT
         ASET 10
         ADD 1
@@ -272,8 +282,10 @@ WRITE:
     LARl 0x0A
     ST             ; Replace the NUL with a newline
     ASET 12
-    ADD 1
+    ADD 1          ; Count the newline (the command line is at most 128
+                   ; characters, so this cannot exceed 255)
 
+    ; Save the name address, text address and count across CREATE
     ASET 8
     SPUSH
     ASET 9
@@ -290,9 +302,9 @@ WRITE:
     OS_SYSCALL CREATE
     ASET 8
     BRz WR_APPEND
-    XOR 3
+    XOR 3          ; Status 3 (already exists) is fine too
     BRz WR_APPEND
-    XOR 3
+    XOR 3          ; Restore any other status and return it
     ASET 9
     SPOP
     SPOP
@@ -300,6 +312,8 @@ WRITE:
     SPOP
     JMP WR_RET
 
+    ; APPEND(name = $a8:$a9, data = $a8:text, count): the text is in the
+    ; same segment as the name
     WR_APPEND:
     ASET 12
     SPOP
@@ -377,6 +391,7 @@ APPEND:
     SPUSH
     ASET 1
     SPOP           ; $a1 = entry offset
+    ; $a6:$a5 = current file size
     LAh FSBUF_METABUF
     LAl 0
     ASET 5
@@ -390,6 +405,7 @@ APPEND:
     ASET 8
     BRnp AP_RET
 
+    ; Fill one block per pass until no bytes remain ($a0 = status 0)
     ASET 0
     AND 0
     AP_LP:
@@ -402,6 +418,7 @@ APPEND:
         OS_SYSCALL AP_COPY
         JMP AP_LP
 
+    ; Disk full: keep what was written, and return status 6
     AP_FULL:
     SPUSH
     ASET 0
@@ -451,7 +468,8 @@ APPEND:
 .padseg 0
 
 ;
-; APPEND helper: check that size ($a6:$a5) + count ($a4) <= 32512.
+; APPEND helper: check that size ($a6:$a5) + count ($a4) <= 32512 (0x7F00).
+; Uses APPEND's registers.
 ;
 ; Returns:
 ; $a8 - Status: 0 or 7 (file too big)
@@ -472,9 +490,9 @@ AP_CHECKSIZE:
     ASET 8
     SPOP
     SPOP ADD       ; $a8 = new size (high byte)
-    BRn AP_TOOBIG
+    BRn AP_TOOBIG  ; >= 0x8000
     ADD 1
-    BRzp AP_SIZE_OK
+    BRzp AP_SIZE_OK ; High byte < 0x7F (only 0x7F + 1 is negative)
 
     ; High byte is 0x7F: the low byte must be 0
     ASET 5
@@ -504,7 +522,11 @@ AP_CHECKSIZE:
 ; APPEND helper: get the block the next byte goes into into
 ; FSBUF_DATABUF. If the size is a multiple of 256, a new block is
 ; allocated (and zeroed); otherwise the last block is read.
-; Sets $a7 to the block's metadata slot offset.
+; Sets $a7 to the block's metadata slot offset. Uses APPEND's registers.
+;
+; A new block's (track, sector) is stored in FSBUF_METABUF straight away,
+; but the metadata only reaches the disk at the end of APPEND, after the
+; data and the bitmap.
 ;
 ; Returns:
 ; $a8 - Status: 0 or 6 (disk full)
@@ -525,6 +547,7 @@ AP_GETBLOCK:
     ASET 8
     BRnp AP_GB_RET
 
+    ; Store the new block's track ($a9) and sector ($a10) in its slot
     LAh FSBUF_METABUF
     ASET 7
     STal
@@ -538,7 +561,7 @@ AP_GETBLOCK:
     ASET 7
     NOT
     ADD 1
-    NOT
+    NOT            ; $a7 -= 1: back to the start of the slot
 
     ASET 8
     LARh FSBUF_DATABUF
@@ -579,10 +602,11 @@ AP_GETBLOCK:
 ;
 ; APPEND helper: copy as many bytes as fit into the current block
 ; (FSBUF_DATABUF, slot $a7), write the block, and advance the data
-; pointer, the byte count and the file size.
+; pointer, the byte count and the file size. Uses APPEND's registers.
 ;
 AP_COPY:
-    ; n = min(remaining, 256 - size low byte)
+    ; n = min(remaining, 256 - size low byte), in $a12.
+    ; remaining > space exactly when ~space + remaining carries.
     ASET 5
     SPUSH
     ASET 12
@@ -613,6 +637,7 @@ AP_COPY:
     ASET 12
     SPUSH          ; Save n
 
+    ; Copy n bytes from $a2:$a3 to FSBUF_DATABUF + size low byte
     ASET 2
     SPUSH
     ASET 8
@@ -644,7 +669,8 @@ AP_COPY:
     ASET 11
     OS_SYSCALL FS_WRITE_SECTOR
 
-    ; Advance the counters by n
+    ; Advance the counters by n: leave three copies of n on the stack, one
+    ; per counter. The 16-bit adds carry into the high byte via the O flag.
     ASET 12
     SPOP
     SPUSH

@@ -6,6 +6,13 @@
 ; ==                               ==
 ; ===================================
 ;
+; Segment 42: COPY (CP)
+; Segment 43: CP_BODY
+; Segment 44: CP_NEWMETA, CP_FINISH, CP_ADD_ENTRY, CP_ROLLBACK
+;
+; Buffers: FSBUF_METABUF2 holds the source's metadata, FSBUF_METABUF the
+; new file's, and FSBUF_DATABUF one block at a time.
+;
 
 #name "fscopy"
 #segment 42
@@ -61,7 +68,7 @@ COPY:
     BRnp CP_RET
 
     ASET 10
-    OS_SYSCALL CP_BODY
+    OS_SYSCALL CP_BODY ; $a9 = the free entry
     JMP CP_RET
 
     CP_EXISTS:
@@ -98,9 +105,10 @@ CP_BODY:
     ASET 9
     SPUSH
     ASET 0
-    SPOP
+    SPOP           ; $a0 = free entry offset
 
-    ; Open the source: its metadata goes into FSBUF_METABUF2
+    ; Open the source (this doesn't reload FSBUF_DIRBUF, so the free entry
+    ; stays valid). Its flags go into $a1, its metadata into FSBUF_METABUF2.: its metadata goes into FSBUF_METABUF2
     ASET 8
     LARh FSBUF_NAMEBUF
     ASET 9
@@ -138,7 +146,9 @@ CP_BODY:
     ASET 8
     OS_SYSCALL CP_NEWMETA
 
-    ; Copy every data block
+    ; Copy every data block: for each used slot of the source ($a4 = 2,
+    ; 4, ... 254), read the block, allocate a new sector, record it in the
+    ; new metadata and write the block there
     ASET 4
     LARl 2
     CP_LP:
@@ -175,8 +185,10 @@ CP_BODY:
         ASET 4
         NOT
         ADD 1
-        NOT
+        NOT            ; $a4 -= 1: back to the start of the slot
 
+        ; FS_WRITE_SECTOR($a8 = track, $a9 = sector), from the allocator's
+        ; $a9 = track, $a10 = sector
         ASET 9
         SPUSH
         ASET 8
@@ -252,7 +264,8 @@ CP_NEWMETA:
 
 ;
 ; COPY helper: flush the bitmap, write the new metadata sector ($a2,
-; $a3), then add the new directory entry.
+; $a3), then add the new directory entry. Uses CP_BODY's registers.
+; Falls through into CP_ADD_ENTRY, which returns.
 ;
 CP_FINISH:
     ; Flush the bitmap, write the metadata, then add the entry
@@ -274,7 +287,7 @@ CP_FINISH:
 ;
 ; COPY helper: fill in the new directory entry ($a0) from the source
 ; flags ($a1, executable bit only), the metadata sector ($a2, $a3) and
-; FSBUF_NAMEBUF2, then write the directory back.
+; FSBUF_NAMEBUF2, then write the directory back. Uses CP_BODY's registers.
 ;
 CP_ADD_ENTRY:
     ASET 9
@@ -295,6 +308,7 @@ CP_ADD_ENTRY:
     ASET 9
     SPOP OR        ; $a9 = 0x80 | file | exec | track
 
+    ; Store the flags/track byte and the sector byte
     LAh FSBUF_DIRBUF
     ASET 0
     STal
@@ -334,7 +348,8 @@ CP_ADD_ENTRY:
 ;
 ; COPY helper: free every sector allocated so far for the copy
 ; (the blocks recorded in FSBUF_METABUF, and the metadata sector
-; $a2, $a3). Only the in-memory bitmap is changed.
+; $a2, $a3). Only the in-memory bitmap is changed. Uses CP_BODY's
+; registers.
 ;
 CP_ROLLBACK:
     ASET 4

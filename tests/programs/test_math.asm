@@ -14,6 +14,12 @@
 ;
 ; Each table is a list of (a, b) byte pairs ended by the pair (0xFF, 0xFF).
 ;
+; Each test section sits in its own segment and calls the next one, so that
+; its loop's local branches stay within a page. In every loop, $a1 is the
+; table pointer and $a3/$a4 the operands (callee-saved, so they survive the
+; calls); results are moved to $a5/$a6 before printing, because printing
+; clobbers $a8-$a15. Non-zero overflow flags are printed as 01.
+;
 
 #segment 0x45
 #name "test_math"

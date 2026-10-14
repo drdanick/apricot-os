@@ -6,6 +6,10 @@
 ; ==                               ==
 ; ===================================
 ;
+; Segment 47:    FORMAT
+; Segments 48-49: PARSE_VOLNAME, CONFIRM, PREP_VOLINFO, FLUSH_VOLINFO, PS,
+;                 strings (the strings must stay in PS's segment)
+;
 
 #name "fsformat"
 #segment 47
@@ -34,6 +38,11 @@
 ; Returns:
 ; $a8 - Status: 0 (also when cancelled), 4 (bad name) or 13 (no disk)
 ;
+; Notes:
+; FSBUF_VOLSTATE and FSMEM_VOL_INFO must describe the selected disk (they
+; are set when it is mounted at boot or by DISKSEL). On success the disk
+; is marked as mounted, with the root as the working directory.
+;
 ; Volatile registers:
 ; $a8-$a15
 ;
@@ -44,7 +53,7 @@ FORMAT:
     BRnp FORMAT_RET
 
     PORTIN_DISK_STATUS
-    NOT
+    NOT                ; Zero if the status is 0xFF (no disk open)
     BRnp FORMAT_HAVE_DISK
     ASET 8
     LARl 13
@@ -83,7 +92,7 @@ FORMAT:
     ASET 8
     AND 0
     ADD 1
-    ST
+    ST                 ; Byte 8, bit 0: track 1, sector 0 (the root)
 
     ; Write an empty root directory, then the bitmap, then the volume info
     ASET 8
@@ -95,9 +104,9 @@ FORMAT:
 
     ASET 8
     AND 0
-    ADD 1
+    ADD 1              ; Track 1
     ASET 9
-    AND 0
+    AND 0              ; Sector 0
     ASET 10
     LARh FSBUF_DATABUF
     ASET 11
@@ -144,6 +153,9 @@ FORMAT:
 ;
 ; Volatile registers:
 ; $a8-$a14
+;
+; Registers: as FSDIR_PARSE_NAME, but the destination is always
+; FSBUF_VOLNAME ($a10 = its low byte) and the limit is 8 characters.
 ;
 PARSE_VOLNAME:
     ASET 10
@@ -219,6 +231,7 @@ CONFIRM:
     LARl S_ASK
     ASET 10
     OS_SYSCALL PS
+    ; Print the disk number as a digit (disks are 0-8)
     ASET 8
     PORTIN_DISK_STATUS
     SPUSH
@@ -231,7 +244,7 @@ CONFIRM:
     OS_SYSCALL PS
 
     ASET 9
-    PORTIN_KBD_INPUT
+    PORTIN_KBD_INPUT   ; $a9 = key
     SPUSH
     ASET 10            ; Echo printable keys (0x20-0x7E)
     LARl 0xE0
@@ -270,7 +283,7 @@ CONFIRM:
 
     CF_YES:
     ASET 8
-    OR 1
+    OR 1               ; $a8 is 0 here (the comparison above), so this sets it to 1
 
     CF_RET:
     ASET 9
@@ -295,13 +308,15 @@ PREP_VOLINFO:
     NOT                ; Zero if the state is 1 (no signature)
     BRnp PVI_NAME
 
+    ; Clear the sector (so no boot flag), then copy the signature and the
+    ; default name
     ASET 8
     LARh FSMEM_VOL_INFO
     ASET 9
     AND 0
     ASET 10
     OS_SYSCALL MEMUTIL_SEGSET
-    ASET 8             ; Signature and default name
+    ASET 8
     LARh SIG_AND_NAME
     ASET 9
     LARl SIG_AND_NAME
@@ -314,6 +329,7 @@ PREP_VOLINFO:
     ASET 13
     OS_SYSCALL MEMUTIL_MEMCPY
 
+    ; Copy the given name, if any, to bytes 4-11
     PVI_NAME:
     LAh FSBUF_VOLNAME
     LAl FSBUF_VOLNAME
@@ -372,6 +388,7 @@ PS:
     OS_SYSCALL_RET
 
 
+; Default volume information: the signature, then the name NUL padded to 8
 SIG_AND_NAME:
 .fill 0xC0
 .fill 0x30

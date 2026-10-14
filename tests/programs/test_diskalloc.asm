@@ -19,11 +19,13 @@
 #include "testlib.asm"
 #include "testmacros.asm"
 
+    ; Use up the three free sectors, then fail with disk full
     OS_CALLFUNC ALLOC
     OS_CALLFUNC ALLOC
     OS_CALLFUNC ALLOC
     OS_CALLFUNC ALLOC
 
+    ; Free 25/2, then check it ($a0) and a sector that is still used ($a1)
     TM_SET 8 25
     TM_SET 9 2
     OS_CALLFUNC DISKALLOC_FREE_SECTOR
@@ -40,6 +42,7 @@
     TM_PREG 1
     TM_NL
 
+    ; The freed sector is the only free one, so it is allocated again
     OS_CALLFUNC ALLOC
     OS_CALLFUNC DISKALLOC_FLUSH_BITMAP
     OS_PROG_EXIT

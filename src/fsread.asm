@@ -57,7 +57,8 @@ CAT:
 
     OS_SYSCALL OSUTIL_PUSHREGS
 
-    ; $a0:$a1 = bytes remaining, $a2 = metadata pointer offset
+    ; $a0:$a1 = bytes remaining (high:low), $a2 = metadata pointer offset.
+    ; Each block prints 256 bytes while $a0 > 0, then the final $a1 bytes.
     LAh FSBUF_METABUF
     LAl 0
     ASET 1
@@ -105,17 +106,17 @@ CAT:
         BRz CAT_LAST
         NOT
         ADD 1
-        NOT
+        NOT            ; $a0 -= 1
         ASET 9
-        AND 0
+        AND 0          ; Count 0 = 256 bytes
         JMP CAT_PRINT
         CAT_LAST:
         ASET 1
         SPUSH
         ASET 9
-        SPOP
+        SPOP           ; Count = $a1
         ASET 1
-        AND 0
+        AND 0          ; Nothing remains after this block
         CAT_PRINT:
         ASET 8
         LARh FSBUF_DATABUF
@@ -124,7 +125,7 @@ CAT:
 
         ASET 2
         ADD 1
-        BRnp CAT_LP
+        BRnp CAT_LP    ; Stop after the last pair (offset wraps to 0)
 
     CAT_DONE:
     ASET 8

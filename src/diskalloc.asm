@@ -120,6 +120,8 @@ AUTO_ALLOCATE_SECTOR:
     ASET 9
     LARl 8         ; Skip track 0 (bytes 0-7)
 
+    ; Find the first bitmap byte with a clear bit. The offset ($a9) runs
+    ; 8..255 (tracks 1-31) and the loop ends when it wraps to 0.
     AA_SCAN:
         STal
         ASET 10
@@ -144,6 +146,8 @@ AUTO_ALLOCATE_SECTOR:
     AND 0
     ADD 1
 
+    ; Shift the inverted byte right until bit 0 is set, counting the shifts
+    ; in $a11 and moving the mask left in step with it
     AA_BIT:
         ASET 10
         SPUSH

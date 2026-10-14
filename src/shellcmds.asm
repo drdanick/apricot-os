@@ -44,7 +44,11 @@
 ;=========================================
 
 
-; Pointers to the headers of the builtin shell commands
+; Pointers to the headers of the builtin shell commands.
+; These are .nearptrs, so CMD_ARRAY and every header must stay in this
+; segment (14). Handler bodies can live anywhere (headers hold a .farptr):
+; the filesystem and disk commands point straight into fscmds, fsstat and
+; diskcmds.
 CMD_ARRAY:
 .nearptr HI_H
 .nearptr CD_H
@@ -193,6 +197,7 @@ CLS:
 ; ===============================================
 ;                SEGMENT BOUNDARY
 ; ===============================================
+; Segment 15: handler bodies that don't fit in segment 14
 .padseg 0
 
 ECHO:

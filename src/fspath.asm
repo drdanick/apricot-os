@@ -95,8 +95,8 @@ PATH_POP:
     LD
     NOT
     ADD 1
-    NOT
-    BRz PATH_POP_RET
+    NOT                ; depth - 1
+    BRz PATH_POP_RET   ; Never pop the root (depth stays >= 1)
     ST
     PATH_POP_RET:
     OS_SYSCALL_RET
@@ -138,7 +138,7 @@ CHDIR:
     ASET 12
     LD
 
-    ; "/" ?
+    ; "/" ?  (c0 ^ '/') | c1 is zero only for "/" followed by NUL
     ASET 11
     SPUSH
     ASET 10
@@ -149,7 +149,7 @@ CHDIR:
     SPOP OR
     BRz CD_ROOT
 
-    ; ".." ?
+    ; ".." ?  ((c1 ^ '.') | c2) | (c0 ^ '.') is zero only for ".."
     ASET 12
     SPUSH
     ASET 11
@@ -167,7 +167,8 @@ CHDIR:
     SPOP OR
     BRz CD_UP
 
-    ; A directory name
+    ; A directory name: restore the argument address (the "/" and ".."
+    ; paths pop it instead), parse it, and look it up in the working directory
     ASET 9
     SPOP
     ASET 8
@@ -260,9 +261,16 @@ PRINT_PATH:
 
 ;
 ; Print the working directory's path ("/" or "/A/B") without a newline.
+; The names are read from the path stack entries, so no disk access is needed.
 ;
 ; Volatile registers:
 ; $a8-$a13
+;
+; Registers:
+; $a9  - address of the current path stack entry (skips the root entry)
+; $a11 - components left to print, as a negative count
+; $a12 - name characters left to print, as a negative count
+; $a13 - address of the current name character
 ;
 PRINT_PATH_NONL:
     LAh FSBUF_PATH_DEPTH

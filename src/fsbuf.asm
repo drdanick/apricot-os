@@ -14,7 +14,9 @@
 #name "fsbuf"
 #segment 29
 
-; NOTE: This data spans five segments (29-33)
+; NOTE: This data spans five segments (29-33).
+; It is loaded from the disk image at boot, so the initial values below
+; are the driver's state at power-on (unmounted, working directory = /).
 
 ;
 ; Segment 29: driver state
@@ -25,7 +27,7 @@ PATH_DEPTH: .fill 1          ; Number of entries on the path stack (1 = root onl
 NAMEBUF:    .blockw 6 0      ; Parsed name (6 bytes, NUL padded)
 NAMEBUF2:   .blockw 6 0      ; Second parsed name (MV/CP destination)
 VOLNAME:    .blockw 8 0      ; Parsed volume name (8 bytes, NUL padded)
-VARS:       .blockw 16 0     ; Scratch variables for the driver routines
+VARS:       .blockw 16 0     ; Scratch space (currently unused)
 
 .blockw 89 0                 ; Pad so that PATH_STACK starts at offset 0x80
 

@@ -16,6 +16,16 @@
 ; Strings live in two tables, each within one page: labels (printed
 ; with PS) and other text (printed with PT).
 ;
+; Segment 52: STAT, PRINT_NAME, PRINT_S, NEWLINE
+; Segment 53: STAT_TAIL, PRINT_TS
+; Segment 54: STAT_ENTRY, CLOSE_RANGE, WALK state, PS, PT
+; Segment 55: STAT_DIR
+; Segment 56: STAT_FILE
+; Segment 57: STAT_FILE2, FIELD_TS
+; Segment 58: WALK
+; Segment 59: FIELD16, text strings
+; Segment 60: label strings
+;
 
 #name "fsinfo"
 #segment 52
@@ -148,6 +158,9 @@ PRINT_NAME:
 ;
 ; Print "S" unless the 16 bit count $a8:$a9 is exactly 1.
 ;
+; Volatile registers:
+; $a8, $a9
+;
 PRINT_S:
     ASET 8
     BRnp PRS_PRINT
@@ -167,6 +180,9 @@ PRINT_S:
 ;
 ; Print a newline.
 ;
+; Volatile registers:
+; $a8
+;
 NEWLINE:
     ASET 8
     LARl 0x0A
@@ -180,7 +196,7 @@ NEWLINE:
 
 ;
 ; STAT helper: the PATH, TYPE and EXEC lines, the file or directory
-; details, then the ENTRY line.
+; details, then the ENTRY line. Uses STAT's registers.
 ;
 STAT_TAIL:
     ; PATH: the working directory's path (unless it is the root), '/', the name
@@ -194,7 +210,7 @@ STAT_TAIL:
     LD
     NOT
     ADD 1
-    NOT
+    NOT                ; depth - 1: zero at the root
     BRz ST_PATH_ROOT
     OS_SYSCALL FSPATH_PRINT_PATH_NONL
     ST_PATH_ROOT:
@@ -290,6 +306,7 @@ PRINT_TS:
 
 ;
 ; STAT helper: the ENTRY line: slot OF 32 IN parent (parent's track/sector).
+; Uses STAT's registers.
 ;
 STAT_ENTRY:
     ASET 9
@@ -300,7 +317,7 @@ STAT_ENTRY:
     SPUSH
     ASET 8
     SPOP
-    SHFr 3
+    SHFr 3             ; Entry offset / 8
     ADD 1              ; 1-based slot number
     ASET 9
     OS_SYSCALL LIBDISP_PUTNUM
@@ -353,10 +370,11 @@ CLOSE_RANGE:
     ASET 8
     OS_SYSCALL_RET
 
-; WALK state
-V_MODE:   .fill 0
-V_BLOCKS: .fill 0
-V_FRAGS:  .fill 0
+; WALK state, shared with STAT_FILE and STAT_FILE2 (reached by absolute
+; address, since they are in other segments)
+V_MODE:   .fill 0      ; 0 = count only, 1 = also print the ranges
+V_BLOCKS: .fill 0      ; Number of data blocks
+V_FRAGS:  .fill 0      ; Number of runs of consecutive sectors
 
 ;
 ; Print a label string.
@@ -395,7 +413,7 @@ PT:
 
 ;
 ; STAT helper: the lines for a directory (its sector is in FSBUF_METABUF).
-; Uses $a4 = files, $a5 = directories.
+; Uses STAT's registers, and $a4 = files, $a5 = directories.
 ;
 STAT_DIR:
     ASET 4
@@ -410,7 +428,7 @@ STAT_DIR:
         ASET 9
         LD
         BRzp SD_NEXT   ; Free slot
-        SHFl 2
+        SHFl 2         ; Bit 5 (file) -> bit 7
         BRn SD_FILE
         ASET 5
         ADD 1
@@ -517,6 +535,7 @@ STAT_DIR:
 
 ;
 ; STAT helper: the lines for a file (its metadata is in FSBUF_METABUF).
+; Uses STAT's registers; WALK also uses $a4-$a7.
 ;
 STAT_FILE:
     ; SIZE
@@ -545,6 +564,7 @@ STAT_FILE:
     OS_SYSCALL WALK
 
     ; BLOCKS: n (n*256 BYTES, unused UNUSED)
+    ; n*256 is printed as the 16 bit number n:0
     ASET 9
     LARl S_BLOCKS
     ASET 10
@@ -616,6 +636,8 @@ STAT_FILE:
 
 ;
 ; STAT helper: the FRAGMENTS, ON DISK, METADATA and DATA lines for a file.
+; Expects V_BLOCKS and V_FRAGS from STAT_FILE's first WALK. Uses STAT's
+; registers.
 ;
 STAT_FILE2:
     ; FRAGMENTS
@@ -680,6 +702,7 @@ STAT_FILE2:
     ASET 10
     OS_SYSCALL PT
     JMP SF_DATA_END
+    ; Walk again, this time printing the ranges
     SF_RANGES:
     LAh V_MODE
     LAl V_MODE
@@ -740,6 +763,9 @@ FIELD_TS:
 ; $a7 = bit 0: a block has been seen, bit 1: the current range has
 ; more than one block.
 ;
+; Volatile registers:
+; $a4-$a15
+;
 WALK:
     LAh V_BLOCKS
     LAl V_BLOCKS
@@ -775,7 +801,9 @@ WALK:
         ADD 1
         ST
 
-        ; Is it the sector after the previous block?
+        ; Is it the sector after the previous block? The expected sector is
+        ; ($a11, $a10) = previous + 1, where sector 63 is followed by
+        ; sector 0 of the next track
         ASET 7
         SPUSH
         ASET 12
@@ -815,6 +843,8 @@ WALK:
         OR 2
         JMP W_SAVE
 
+        ; Start a new range: count it, and in print mode close the previous
+        ; range and print " track/sector" (no space before the first)
         W_NEWFRAG:
         LAh V_FRAGS
         LAl V_FRAGS
@@ -838,7 +868,7 @@ WALK:
         PORTOUT_TTY_WRITE
         W_FIRST:
         ASET 9
-        SPOP
+        SPOP           ; Peek this block's track and sector
         ASET 8
         SPOP
         SPUSH
@@ -851,6 +881,7 @@ WALK:
         AND 0
         ADD 1
 
+        ; This block becomes the previous one
         W_SAVE:
         ASET 6
         SPOP
@@ -862,6 +893,7 @@ WALK:
         ADD 2
         BRnp W_LP
 
+    ; Close the last range
     LAh V_MODE
     LAl V_MODE
     ASET 8

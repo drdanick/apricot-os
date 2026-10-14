@@ -6,6 +6,9 @@
 ; ==                               ==
 ; ===================================
 ;
+; Segment 45: FSSTAT (the shell handler)
+; Segment 46: COUNT_USED, PRINT_SECTORS, PS, strings
+;
 
 #name "fsstat"
 #segment 45
@@ -30,7 +33,7 @@ FSSTAT:
 
     ASET 8
     PORTIN_DISK_STATUS
-    NOT
+    NOT            ; Zero if the status is 0xFF (no disk open)
     BRnp FSSTAT_HAVE_DISK
     ASET 9
     LARl S_NODISK
@@ -75,7 +78,7 @@ FSSTAT:
     ASET 10
     OS_SYSCALL PS
     ASET 9
-    SPOP
+    SPOP           ; Peek the count into $a8:$a9
     ASET 8
     SPOP
     SPUSH
@@ -84,7 +87,7 @@ FSSTAT:
     ASET 10
     OS_SYSCALL PRINT_SECTORS
 
-    ; Free sectors = 1984 - used = ~used + 0x07C1
+    ; Free sectors = 1984 - used = ~used + 0x07C1 (16-bit, ~used + 1 = -used)
     ASET 9
     LARl S_FREE
     ASET 10
@@ -157,11 +160,12 @@ COUNT_USED:
         STal
         ASET 10
         LD
+        ; Count the set bits: test bit 7, then shift left until the byte is 0
         CU_BIT:
             BRz CU_NEXT    ; No more allocated sectors in this byte
             BRzp CU_SHIFT  ; Bit 7 is clear
             ASET 9
-            ADD 1
+            ADD 1          ; 16-bit increment of $a8:$a9
             BRnp CU_SHIFT
             ASET 8
             ADD 1
@@ -198,7 +202,7 @@ PRINT_SECTORS:
     ASET 10
     OS_SYSCALL PS
 
-    ; KB = sectors / 4
+    ; KB = sectors / 4: shift the 16-bit value right by 2
     ASET 9
     SPOP
     ASET 8
