@@ -6,6 +6,10 @@ run only the fast ones with ``pytest -m "not simulator"``.
 Booting is the slow part, so most test modules run one session with many
 commands in a module-scoped fixture, and each test checks one command's
 output.
+
+Sessions are independent, so the suite runs in parallel with pytest-xdist
+(``pytest -n auto --dist loadgroup``, as tox does). Tests that share a
+session fixture are put in one xdist group, so the session runs only once.
 """
 
 from __future__ import annotations
@@ -32,6 +36,40 @@ def pytest_addoption(parser):
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "simulator: boots Apricot OS in aprsim (slow)")
+
+
+def _session_fixtures(item) -> list[str]:
+    """The module-scoped fixtures ``item`` uses (directly or not) that run a simulator session."""
+    names = []
+    for name in item.fixturenames:
+        definitions = item._fixtureinfo.name2fixturedefs.get(name, ())
+        if any(d.scope == "module" and "boot" in d.argnames for d in definitions):
+            names.append(name)
+    return names
+
+
+@pytest.hookimpl(tryfirst=True)       # before xdist reads the groups
+def pytest_collection_modifyitems(config, items):
+    """Give the tests of each module that share session fixtures one xdist group."""
+    by_module: dict[str, list] = {}
+    for item in items:
+        by_module.setdefault(item.module.__name__, []).append(item)
+    for module, module_items in by_module.items():
+        # Union the tests that share a session fixture into groups.
+        group_of: dict[str, str] = {}
+
+        def find(name: str) -> str:
+            while group_of.setdefault(name, name) != name:
+                name = group_of[name]
+            return name
+
+        uses = [(item, _session_fixtures(item)) for item in module_items]
+        for _, names in uses:
+            for other in names[1:]:
+                group_of[find(other)] = find(names[0])
+        for item, names in uses:
+            if names:
+                item.add_marker(pytest.mark.xdist_group(f"{module}::{find(names[0])}"))
 
 
 def _require(get: Callable):
