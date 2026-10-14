@@ -97,14 +97,15 @@ class TestMath:
 
     @pytest.mark.parametrize("index, text, value", [
         (0, "123", 123),
-        pytest.param(1, "7", 7, marks=pytest.mark.xfail(strict=True, reason=(
-            "ATOB bug: the length check pops the decimal weight instead of the length, "
-            "so one-digit strings are rejected"))),
+        (1, "7", 7),
         (2, "255", 255),
-        pytest.param(3, "0", 0, marks=pytest.mark.xfail(strict=True, reason="ATOB one-digit bug, as above")),
+        (3, "0", 0),
     ])
     def test_atob(self, outputs, index, text, value):
         assert results_named(outputs["test_math"], "ATOB")[index] == [1, value], text
+
+    def test_atob_rejects_more_than_three_digits(self, outputs):
+        assert results_named(outputs["test_math"], "ATOB")[4][0] == 0
 
     def test_htoi(self, outputs):
         assert results_named(outputs["test_math"], "HTOI") == [[0x1A, 0x2B], [0x00, 0x0F], [0x00, 0x00], [0xFF, 0xFF]]
@@ -131,10 +132,7 @@ def putnum_lines(text):
 
 class TestDisp:
     @pytest.mark.parametrize("value", [
-        0, 7, 42, 99, 255,
-        pytest.param(100, marks=pytest.mark.xfail(strict=True, reason="PUTNUM drops a zero tens digit")),
-        pytest.param(105, marks=pytest.mark.xfail(strict=True, reason="PUTNUM drops a zero tens digit")),
-        pytest.param(200, marks=pytest.mark.xfail(strict=True, reason="PUTNUM drops a zero tens digit")),
+        0, 7, 42, 99, 100, 105, 200, 255,
     ])
     def test_putnum(self, outputs, value):
         assert putnum_lines(outputs["test_disp"])[value] == str(value)
@@ -167,16 +165,11 @@ class TestOsutil:
 
 # ------------------------------------------------------------------ diskio
 
-BULK_BUG = ("COPYBULKTODSK applies its sector-wrap check to the memory segment, not the disk "
-            "sector, so a source at 0x70 or above jumps to memory segment 0 and the next track")
-
-
 class TestDiskio:
     def test_copytodsk_and_copyfromdsk(self, session, outputs):
         assert results_named(outputs["test_diskio"], "COPY") == [[0xC3, 0xC3]]
         assert session.disks[0].sector(28, 40) == bytes([0xC3]) * 256
 
-    @pytest.mark.xfail(strict=True, reason=BULK_BUG)
     def test_copybulktodsk(self, session):
         disk = session.disks[0]
         assert [disk.sector(30, s) for s in range(2, 6)] == [bytes([v]) * 256 for v in (0x11, 0x22, 0x33, 0x44)]
@@ -184,7 +177,6 @@ class TestDiskio:
     def test_copybulkfromdsk(self, outputs):
         assert results_named(outputs["test_diskio"], "BULK") == [BULK_READ_VALUES]
 
-    @pytest.mark.xfail(strict=True, reason="bulk copies wrap tracks after 16 sectors (mask 0x70, not 0xC0)")
     def test_copybulktodsk_past_sector_15(self, session):
         disk = session.disks[0]
         assert [disk.sector(29, s)[0] for s in (14, 15, 16)] == [0x77, 0x88, 0x99]

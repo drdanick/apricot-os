@@ -40,6 +40,8 @@ from .diskimage import OS_SECTORS, SECTOR_SIZE, DiskImage
 from .terminal import Terminal
 
 ENTER = b"\r"
+PROMPT = b">"            # the shell's prompt; nothing before the first one contains it
+PROMPT_SETTLE = 0.3      # seconds from the prompt until the shell is reading keys
 F1 = b"\x1bOP"
 DELETE = b"\x7f"
 
@@ -139,7 +141,7 @@ class Session:
     build: OsBuild
     disks: dict[int, DiskImage] = field(default_factory=dict)
     programs: list[bytes] = field(default_factory=list)
-    boot_wait: float = 8.0
+    boot_wait: float = 6.0
     key_delay: float = 0.2
     command_wait: float = 1.5
     workdir: Path | None = None
@@ -198,27 +200,32 @@ class Session:
             disks={n: DiskImage.load(directory / f"{n}.dsk") for n in disks},
             simulator_status=status)
 
-    def _keystrokes(self, steps: list[Step]) -> list[tuple[bytes, float]]:
-        """The (bytes to type, seconds to wait afterwards) sequence for a session."""
-        strokes = [(b"m", 0.2), (b"m", 0.2), (b" ", self.boot_wait)]
+    def _keystrokes(self, steps: list[Step]) -> list[tuple[bytes, float, bytes | None]]:
+        """The (bytes to type, seconds to wait afterwards, output that ends the wait early) sequence.
+
+        The boot wait ends PROMPT_SETTLE seconds after the shell's first
+        prompt; ``boot_wait`` is only the limit, for boots that never reach
+        the shell.
+        """
+        strokes = [(b"m", 0.2, None), (b"m", 0.2, None), (b" ", self.boot_wait, PROMPT)]
         for step in steps:
             if isinstance(step, Wait):
-                strokes.append((b"", step.seconds))
+                strokes.append((b"", step.seconds, None))
                 continue
             data = step.text.encode("latin-1")
-            strokes += [(data[i:i + 1], self.key_delay) for i in range(len(data))]
+            strokes += [(data[i:i + 1], self.key_delay, None) for i in range(len(data))]
             wait = self.command_wait if step.wait is None else step.wait
             if isinstance(step, Type):
-                strokes.append((ENTER, wait))
+                strokes.append((ENTER, wait, None))
             elif strokes:
-                strokes[-1] = (strokes[-1][0], wait)
-        strokes.append((F1, 1.0))
+                strokes[-1] = (strokes[-1][0], wait, None)
+        strokes.append((F1, 1.0, None))
         return strokes
 
 
 # --------------------------------------------------------------- internals
 
-def _drive(command: list[str], cwd: Path, strokes: list[tuple[bytes, float]],
+def _drive(command: list[str], cwd: Path, strokes: list[tuple[bytes, float, bytes | None]],
            fifo_fd: int, captured: bytearray) -> str:
     """Run ``command`` in a pseudo-terminal, typing ``strokes``. Returns how it ended.
 
@@ -233,7 +240,7 @@ def _drive(command: list[str], cwd: Path, strokes: list[tuple[bytes, float]],
 
     fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", 40, 120, 0, 0))
     alive = _drain(fd, fifo_fd, captured, 0.5)
-    for data, wait in strokes:
+    for data, wait, until in strokes:
         if not alive:
             break
         if data:
@@ -241,7 +248,7 @@ def _drive(command: list[str], cwd: Path, strokes: list[tuple[bytes, float]],
                 os.write(fd, data)
             except OSError:
                 break
-        alive = _drain(fd, fifo_fd, captured, wait)
+        alive = _drain(fd, fifo_fd, captured, wait, until)
     _drain(fd, fifo_fd, captured, 1.0)
 
     deadline = time.time() + 3.0
@@ -259,16 +266,21 @@ def _drive(command: list[str], cwd: Path, strokes: list[tuple[bytes, float]],
     return f"exited with code {os.WEXITSTATUS(status)}"
 
 
-def _drain(fd: int, fifo_fd: int, captured: bytearray, seconds: float) -> bool:
+def _drain(fd: int, fifo_fd: int, captured: bytearray, seconds: float, until: bytes | None = None) -> bool:
     """For ``seconds``, discard the simulator's screen output and collect terminal output.
 
-    Returns False once the simulator has gone away.
+    If ``until`` is given, stop PROMPT_SETTLE seconds after new terminal
+    output contains it. Returns False once the simulator has gone away.
     """
     end = time.time() + seconds
+    seen = len(captured)
     while time.time() < end:
         ready = select.select([fd, fifo_fd], [], [], 0.05)[0]
         if fifo_fd in ready:
             _read_available(fifo_fd, captured)
+            if until is not None and until in captured[seen:]:
+                end = min(end, time.time() + PROMPT_SETTLE)
+                until = None
         if fd in ready:
             try:
                 if not os.read(fd, 65536):

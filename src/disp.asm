@@ -94,6 +94,7 @@ PUTNUM:
     OS_SYSCALL LIBMATH_DIV
 
     ASET 10
+    SPUSH          ; Keep the hundreds digit for the tens test below
     BRz PUTNUM_SKIP_100
     SPUSH
     LARl DECTOCHAR_TABLE
@@ -113,8 +114,14 @@ PUTNUM:
     ASET 10
     OS_SYSCALL LIBMATH_DIV
 
+    ; Skip the tens digit only if it is a leading zero (hundreds | tens == 0)
     ASET 10
+    SPUSH
+    ASET 9
+    SPOP
+    SPOP OR        ; $a9 = tens | hundreds
     BRz PUTNUM_SKIP_10
+    ASET 10
     SPUSH
     LARl DECTOCHAR_TABLE
     SPOP ADD

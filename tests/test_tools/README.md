@@ -76,7 +76,7 @@ Locations are `(track, sector)` tuples. The constants (`TRACKS`, `SECTOR_SIZE`, 
 
 ### `simulator`
 
-`Session(tools, build, disks={}, programs=[], boot_wait=8.0, key_delay=0.2, command_wait=1.5, workdir=None)` is one run of the simulator. `session.run(steps)` writes the disks and programs to a working directory, starts `aprsim` in a pseudo-terminal with port-7 output going to a FIFO, switches it to RUN mode, waits for the boot, types the steps, quits with F1, and returns a `SessionResult`. Disk 0 always gets the current build's OS image, so a disk made earlier boots the current code. Programs are PB files loaded into memory before boot; their origin must be below `0x8000`.
+`Session(tools, build, disks={}, programs=[], boot_wait=6.0, key_delay=0.2, command_wait=1.5, workdir=None)` is one run of the simulator. `session.run(steps)` writes the disks and programs to a working directory, starts `aprsim` in a pseudo-terminal with port-7 output going to a FIFO, switches it to RUN mode, waits for the boot (until shortly after the shell's first `>` prompt, or at most `boot_wait` seconds), types the steps, quits with F1, and returns a `SessionResult`. Disk 0 always gets the current build's OS image, so a disk made earlier boots the current code. Programs are PB files loaded into memory before boot; their origin must be below `0x8000`.
 
 Steps are:
 

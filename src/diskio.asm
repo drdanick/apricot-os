@@ -22,8 +22,6 @@
 #include "osutil.asm"
 #include "memutil.asm"
 
-; TODO: These routines need to be tested and verified
-
 ; Macro to select a disk track
 ;
 ; Arguments:
@@ -173,7 +171,7 @@ COPYBULKFROMDSK:
         SPUSH      ; Push the segment number twice so we can restore it afterwards
         SPUSH
         ASET 10    ; Use $a10 as a temp register for this operation
-        LARl 0x70   ; 0x70 masks away all but the invalid segment number bits. Valid values will mask to 0.
+        LARl 0xC0   ; 0xC0 masks away all but the invalid segment number bits. Valid values will mask to 0.
         SPOP AND
         ASET 0
         SPOP       ; Restore the segment number
@@ -247,25 +245,26 @@ COPYBULKTODSK:
         OS_LOCALSYSCALL COPYTODSK
 
         ; Increment the source and destination segment
-        ASET 1
-        ADD 1
-        ; TODO: System error if $a1 overflows
+        ; (here $a0 is the memory segment and $a1 the disk sector)
         ASET 0
+        ADD 1
+        ; TODO: System error if $a0 overflows
+        ASET 1
         ADD 1
         ; Check that the disk segment number is valid by masking out valid range bits
         SPUSH      ; Push the segment number twice so we can restore it afterwards
         SPUSH
         ASET 10    ; Use $a10 as a temp register for this operation
-        LARl 0x70   ; 0x70 masks away all but the invalid segment number bits. Valid values will mask to 0.
+        LARl 0xC0   ; 0xC0 masks away all but the invalid segment number bits. Valid values will mask to 0.
         SPOP AND
-        ASET 0
+        ASET 1
         SPOP       ; Restore the segment number
         ASET 10
         ; Continue without setting a new track if the segment number is in range
         BRz CBTD_COPYLP_NOSETTRACK
 
         ; ...otherwise, set the segment number to zero, and increment the track number
-        ASET 0
+        ASET 1
         AND 0
         ASET 2
         ADD 1

@@ -264,7 +264,17 @@ ATOB:
     ASET 11
     AND 0
 
-    ; $a13 will hold our decimal weight
+    ; The string must be 1-3 characters long. Lengths of 4 or more are
+    ; rejected here (length >> 2 is non-zero), and length 0 by its weight
+    ; of 0 below. No need to zero $a10, this has already been done.
+    ASET 13
+    SPUSH
+    ASET 14
+    SPOP
+    SHFr 2
+    BRnp ATOB_RETURN
+
+    ; $a13 will hold our decimal weight (LDI also overwrites $a14, which is scratch here)
     LDI ATOB_WEIGHT_TABLE
     ASET 13
     SPUSH
@@ -272,17 +282,7 @@ ATOB:
     SPOP ADD
     STal
     LD
-    SPUSH
-
-
-    ; Set $a14 to be the -ve of the maximum length we allow
-    ASET 14
-    LARl 0xFD ; -3
-
-    ; Subtract -3 from the calculated length. If it's negative, the length is longer than we support, so return in error.
-    ; No need to zero $a10, this has already been done
-    SPOP ADD
-    BRn ATOB_RETURN
+    BRz ATOB_RETURN
 
     ; ...Otherwise, we process the input string:
     ;

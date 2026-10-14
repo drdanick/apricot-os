@@ -7,7 +7,7 @@
 ;   FASTMULT a b product            one line per pair in FASTMULT_CASES
 ;   DIV a b quotient remainder      one line per pair in DIV_CASES
 ;   POW a b result overflow         one line per pair in POW_CASES
-;   ATOB ok value                   for "123", "7", "255", "0"
+;   ATOB ok value                   for "123", "7", "255", "0", "1234" (too long)
 ;   HTOI high low                   for "1A2B", "F", "0", "FFFF"
 ;   RAND r1 r2 r3 r4 r5             after SET_RAND_SEED(1)
 ;   RAND r1 r2 r3                   after SET_RAND_SEED(0x5A)
@@ -241,6 +241,7 @@ ATOB_CASES:
 .stringz "7"
 .stringz "255"
 .stringz "0"
+.stringz "1234"
 .fill 0
 
 HTOI_CASES:
