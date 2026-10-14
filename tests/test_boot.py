@@ -23,6 +23,13 @@ LOADING = "Loading Operating System..."
 # foreground colour 2, then repeat-PUTC mode.
 TTY_SETUP = bytes([0x03, 0x12, 0x12, 0x0C, 0x02, 0x7F, 0x00])
 
+# Signatures that must be rejected. Every byte position is wrong in one case;
+# FF 00 00 00 and 03 0C 30 C0 XOR to 0xFF like the real signature.
+BAD_SIGNATURES = [
+    "00 00 00 00", "C1 30 0C 03", "C0 31 0C 03", "C0 30 0D 03", "C0 30 0C 07",
+    "FF 00 00 00", "03 0C 30 C0",
+]
+
 # Boot flags that must be rejected. The loader checks a ^ b == 0xFF (passed by
 # 00 FF, 2A D5, 55 AA, D5 2A) and b ^ (b << 1) == 0xFF (passed by AB 55), so
 # neither check is enough on its own.
@@ -67,12 +74,7 @@ def test_no_disk_0_is_a_read_error(boot_disk, build_disk):
     assert_halted_with(boot_disk({1: build_disk}), READ_ERROR)
 
 
-# Every byte position is wrong in one case; FF 00 00 00 and 03 0C 30 C0 XOR to
-# 0xFF like the real signature.
-@pytest.mark.parametrize("signature", [
-    "00 00 00 00", "C1 30 0C 03", "C0 31 0C 03", "C0 30 0D 03", "C0 30 0C 07",
-    "FF 00 00 00", "03 0C 30 C0",
-])
+@pytest.mark.parametrize("signature", BAD_SIGNATURES)
 def test_a_bad_signature_is_not_valid(boot_disk, build_disk, signature):
     assert_halted_with(boot_disk({0: patched(build_disk, 0, signature)}), NOT_VALID)
 
@@ -103,4 +105,23 @@ def test_diskstat_reports_the_boot_flag_exactly(diskstat_session):
     flags, result = diskstat_session
     reported = [text.splitlines()[-1] for text in result.all("DISKSTAT")]
     expected = [f"BOOTABLE:  {'YES' if flag == 'AA 55' else 'NO'}" for flag in flags]
+    assert reported == expected
+
+
+@pytest.fixture(scope="module")
+def signature_session(boot, build_disk):
+    """DISKSEL and DISKSTAT of disks 1-7, each with a bad signature, then disk 8 with the real one."""
+    disks = {0: build_disk, 8: build_disk}
+    steps = []
+    for number, signature in enumerate(BAD_SIGNATURES, start=1):
+        disks[number] = patched(build_disk, 0, signature)
+        steps += [f"DISKSEL {number}", "DISKSTAT"]
+    steps += ["DISKSEL 8", "DISKSTAT"]
+    return boot(steps, disks=disks)
+
+
+def test_the_driver_checks_the_signature_exactly(signature_session):
+    # The filesystem driver's mount (FS_MOUNT_DISK) makes the same check as the loader.
+    reported = [text.splitlines()[1] for text in signature_session.all("DISKSTAT")]
+    expected = ["SIGNATURE: INVALID"] * len(BAD_SIGNATURES) + ["SIGNATURE: VALID"]
     assert reported == expected

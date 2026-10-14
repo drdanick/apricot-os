@@ -74,44 +74,33 @@ MOUNT_DISK:
     ASET 10
     OS_SYSCALL DISKIO_COPYFROMDSK
 
-    ; Validate the disk by checking that the first 4 bytes of
-    ; this sector are 0xC0, 0x30, 0x0C, and 0x03.
-    ; Xoring them together will produce 0xFF.
-    ; NOTE: this is only a checksum; other byte combinations that XOR to
-    ; 0xFF also pass (the boot loader checks the bytes exactly).
+    ASET 10        ; $a10 = volume state 1 (no signature) if the check below fails
+    AND 0
+    ADD 1
+
+    ; Check that the first 4 bytes of this sector are exactly 0xC0, 0x30,
+    ; 0x0C and 0x03. Each byte is the previous one shifted right by 2, and
+    ; one more shift gives 0, so $a11 holds both the expected byte and the
+    ; loop counter (as in the boot loader).
     LAh FSMEM_VOL_INFO
     LAl 0x00
-    ASET 9
-    LD
-    SPUSH
-    LDal
-    ADD 1
-    STal
-    LD
-    SPUSH
-    LDal
-    ADD 1
-    STal
-    LD
-    SPUSH
-    LDal
-    ADD 1
-    STal
-    LD
-    SPOP XOR
-    SPOP XOR
-    SPOP XOR
-    ADD 1 ; Adding 1 will make it zero if the result was 0xFF (The only valid result)
-    BRz MOUNT_DISK_SIG_OK
-    ASET 10        ; $a10 = volume state 1: no signature
-    AND 0
-    ADD 1
-    JMP MOUNT_DISK_FAIL
+    ASET 11
+    LARl 0xC0      ; Expected first byte
+    MOUNT_DISK_SIG_LP:
+        SPUSH      ; $a11 is selected here on every pass
+        ASET 9
+        LD         ; Load the next signature byte
+        SPOP XOR   ; Zero only if it matches
+        BRnp MOUNT_DISK_FAIL
+        LDal       ; $mr += 1
+        ADD 1
+        STal
+        ASET 11
+        SHFr 2     ; 0xC0 -> 0x30 -> 0x0C -> 0x03 -> 0
+        BRnp MOUNT_DISK_SIG_LP
 
-    MOUNT_DISK_SIG_OK:
     ASET 10        ; $a10 = volume state 2 (not formatted) if a check below fails
-    AND 0
-    ADD 2
+    ADD 1
 
     ; Track 0 must be allocated
     LAh FSMEM_VOL_BITMAP
