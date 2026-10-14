@@ -71,17 +71,17 @@ x2E  |  46 | Filesystem statistics (FSSTAT)
 x2F  |  47 | Filesystem format (FORMAT)
 x30  |  48 | Filesystem format helpers
 x31  |  49 | Filesystem format helpers
-x32  |  50 | Disk commands (DISKSEL)
+x32  |  50 | Disk commands (DISKSEL, strings)
 x33  |  51 | Disk commands (DISKSTAT)
-x34  |  52 | Disk commands (strings)
-x35  |  53 |
-x36  |  54 |
-x37  |  55 |
-x38  |  56 |
-x39  |  57 |
-x3A  |  58 |
-x3B  |  59 |
-x3C  |  60 |
+x34  |  52 | Filesystem entry info (STAT)
+x35  |  53 | Filesystem entry info (STAT)
+x36  |  54 | Filesystem entry info (STAT)
+x37  |  55 | Filesystem entry info (STAT, directories)
+x38  |  56 | Filesystem entry info (STAT, files)
+x39  |  57 | Filesystem entry info (STAT, files)
+x3A  |  58 | Filesystem entry info (STAT, block ranges)
+x3B  |  59 | Filesystem entry info (STAT, strings)
+x3C  |  60 | Filesystem entry info (STAT, strings)
 x3D  |  61 | Test program (memexec 3D00)
 x3E  |  62 |
 x3F  |  63 |

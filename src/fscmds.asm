@@ -30,6 +30,7 @@
 #include "fsdel.asm"
 #include "fscopy.asm"
 #include "fsformat.asm"
+#include "fsinfo.asm"
 
 
 ;=========================================
@@ -111,6 +112,13 @@ CP:
     LARh FSCOPY_COPY
     ASET 11
     LARl FSCOPY_COPY
+    JMP RUN_FS
+
+STAT:
+    ASET 10
+    LARh FSINFO_STAT
+    ASET 11
+    LARl FSINFO_STAT
     JMP RUN_FS
 
 ; FORMAT works without a mounted filesystem

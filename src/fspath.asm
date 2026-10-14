@@ -247,6 +247,24 @@ CHDIR:
 ; $a8-$a13
 ;
 PRINT_PATH:
+    ASET 8
+    OS_LOCALSYSCALL PRINT_PATH_NONL
+    ASET 10
+    LARl 0x0A
+    PORTOUT_TTY_WRITE
+    ASET 8
+    AND 0
+    ASET 9
+    OS_SYSCALL_RET
+
+
+;
+; Print the working directory's path ("/" or "/A/B") without a newline.
+;
+; Volatile registers:
+; $a8-$a13
+;
+PRINT_PATH_NONL:
     LAh FSBUF_PATH_DEPTH
     LAl FSBUF_PATH_DEPTH
     ASET 11
@@ -300,11 +318,5 @@ PRINT_PATH:
         BRnp PRP_LP
 
     PRP_END:
-    ASET 10
-    LARl 0x0A
-    PORTOUT_TTY_WRITE
-
-    ASET 8
-    AND 0
     ASET 9
     OS_SYSCALL_RET

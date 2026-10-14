@@ -15,6 +15,7 @@ The Apricot OS shell reads one line at a time (up to 128 characters) and convert
 | [`CD`](#cd-name--cd---cd-) | Change the current directory |
 | [`PWD`](#pwd) | Print the current directory |
 | [`CAT`](#cat-name) | Print a file |
+| [`STAT`](#stat-name) | Show everything stored about a file or directory |
 | [`TOUCH`](#touch-name) | Create an empty file |
 | [`MKDIR`](#mkdir-name) | Create an empty directory |
 | [`WRITE`](#write-name-text) | Append a line of text to a file |
@@ -183,6 +184,56 @@ Prints the current directory, as `/` or `/BIN/SUB`.
 Prints a file. Bytes 0x20–0x7E and newlines are printed as they are; any other byte is shown as `.`, so a binary file can't send commands to the terminal. An empty file prints nothing.
 
 Errors: `MISSING ARGUMENT`, `BAD NAME`, `NOT FOUND`, `NOT A FILE`.
+
+### `STAT NAME`
+
+Shows everything the filesystem stores about a file or directory in the current directory. The filesystem keeps no dates, owners or permissions, so those aren't shown.
+
+For a file:
+
+```
+>STAT NOTE
+NAME:      NOTE
+PATH:      /DOCS/NOTE
+TYPE:      FILE
+EXEC:      NO
+SIZE:      517 BYTES
+BLOCKS:    3 (768 BYTES, 251 UNUSED)
+FRAGMENTS: 1
+ON DISK:   4 SECTORS
+METADATA:  1/6
+DATA:      1/7-1/9
+ENTRY:     2 OF 32 IN /DOCS (1/4)
+```
+
+| Field | Meaning |
+| ----- | ------- |
+| `PATH` | The full path to the entry |
+| `EXEC` | Whether the entry's executable flag is set |
+| `SIZE` | The file's size in bytes |
+| `BLOCKS` | The number of 256-byte data blocks, the space they hold, and how much of it is unused |
+| `FRAGMENTS` | The number of separate runs of consecutive sectors the data is stored in (1 = contiguous) |
+| `ON DISK` | The sectors used in total: the data blocks plus the file's metadata sector |
+| `METADATA` | Where the file's metadata sector is, as `track/sector` |
+| `DATA` | Every data block, as `track/sector`, with runs of consecutive sectors shown as ranges (`1/7-1/9`); `(NONE)` for an empty file |
+| `ENTRY` | Which of the 32 slots in the parent directory holds the entry, the parent's path, and the parent's sector |
+
+For a directory, the size and block lines are replaced by:
+
+```
+>STAT DOCS
+NAME:      DOCS
+PATH:      /DOCS
+TYPE:      DIRECTORY
+EXEC:      NO
+ENTRIES:   2 OF 32 (1 FILE, 1 DIRECTORY)
+SECTOR:    1/4
+ENTRY:     3 OF 32 IN / (1/0)
+```
+
+`ENTRIES` is how many of the directory's 32 slots are in use, split into files and subdirectories; `SECTOR` is where the directory itself is stored.
+
+Errors: `MISSING ARGUMENT`, `BAD NAME`, `NOT FOUND`.
 
 ### `TOUCH NAME`
 

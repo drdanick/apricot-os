@@ -105,6 +105,34 @@ DISKSEL:
     OS_SYSJUMP FSCMDS_FINISH
 
 
+;
+; Print a string from this segment.
+; $a9 - The segment local address of the string
+;
+; Volatile registers:
+; $a8-$a10
+;
+PS:
+    ASET 8
+    LARh S_DISK
+    ASET 10
+    OS_SYSCALL LIBDISP_PUTSTR
+    ASET 8
+    OS_SYSCALL_RET
+
+
+S_DISK:    .stringz "DISK:      "
+S_SIG:     .stringz "SIGNATURE: "
+S_VOLUME:  .stringz "VOLUME:    "
+S_BOOT:    .stringz "BOOTABLE:  "
+S_VALID:   .stringz "VALID\n"
+S_INVALID: .stringz "INVALID\n"
+S_NONE:    .stringz "(NONE)\n"
+S_YES:     .stringz "YES\n"
+S_NO:      .stringz "NO\n"
+S_NODISK:  .stringz "NO DISK\n"
+
+
 ; ===============================================
 ;                SEGMENT BOUNDARY
 ; ===============================================
@@ -237,36 +265,3 @@ DISKSTAT:
     DT_RET:
     ASET 8
     OS_SYSCALL_RET
-
-
-; ===============================================
-;                SEGMENT BOUNDARY
-; ===============================================
-.padseg 0
-
-;
-; Print a string from this segment.
-; $a9 - The segment local address of the string
-;
-; Volatile registers:
-; $a8-$a10
-;
-PS:
-    ASET 8
-    LARh S_DISK
-    ASET 10
-    OS_SYSCALL LIBDISP_PUTSTR
-    ASET 8
-    OS_SYSCALL_RET
-
-
-S_DISK:    .stringz "DISK:      "
-S_SIG:     .stringz "SIGNATURE: "
-S_VOLUME:  .stringz "VOLUME:    "
-S_BOOT:    .stringz "BOOTABLE:  "
-S_VALID:   .stringz "VALID\n"
-S_INVALID: .stringz "INVALID\n"
-S_NONE:    .stringz "(NONE)\n"
-S_YES:     .stringz "YES\n"
-S_NO:      .stringz "NO\n"
-S_NODISK:  .stringz "NO DISK\n"

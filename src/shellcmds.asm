@@ -50,6 +50,7 @@ CMD_ARRAY:
 .nearptr CD_H
 .nearptr LS_H
 .nearptr CP_H
+.nearptr STAT_H
 .nearptr MV_H
 .nearptr RM_H
 .nearptr PWD_H
@@ -88,6 +89,10 @@ LS_H:
 CP_H:
 .farptr FSCMDS_CP
 .stringz "CP"
+
+STAT_H:
+.farptr FSCMDS_STAT
+.stringz "STAT"
 
 MV_H:
 .farptr FSCMDS_MV
