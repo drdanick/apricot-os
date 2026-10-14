@@ -7,6 +7,7 @@ The suite covers:
 | Area | Tests |
 |---|---|
 | The build | segment budgets, page-end branches, cross-page local calls, image layout (`test_build.py`) |
+| The stage 1 boot loader | no disk, bad signatures, bad boot flags; `DISKSTAT`'s boot flag check (`test_boot.py`) |
 | Boot and the shell | boot messages, every built-in command, line editing, the 128-character limit (`test_shell.py`) |
 | Filesystem | `LS`, `CD`, `PWD` (`test_fs_navigation.py`); `CAT`, `STAT` (`test_fs_read.py`); `TOUCH`, `MKDIR`, `WRITE` (`test_fs_write.py`); `RM`, `MV`, `CP`, size limits, disk full (`test_fs_modify.py`) |
 | Disks and formatting | `DISKSEL`, `DISKSTAT`, `FSSTAT` with several disks (`test_disks.py`); `FORMAT` and running without a filesystem (`test_format.py`) |

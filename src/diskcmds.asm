@@ -249,11 +249,11 @@ DISKSTAT:
     SPOP ADD
     BRnp DT_BOOT_PRINT
     LAl 255
-    ASET 10
-    LARl 0xAB      ; -0x55
+    ASET 10        ; $a10 still holds -0xAA
     SPUSH
     ASET 8
     LD
+    NOT            ; 0xAA iff the byte is 0x55
     SPOP ADD
     BRnp DT_BOOT_PRINT
     ASET 9
