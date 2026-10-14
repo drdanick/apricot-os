@@ -39,7 +39,7 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("steps", nargs="*", help='commands to type; "@keys:Y" types without Enter, "@wait:5" waits')
     run.add_argument("--disk", action="append", default=[], metavar="N=IMAGE", help="provide IMAGE as disk N")
     run.add_argument("--program", action="append", default=[], type=Path, metavar="BIN",
-                     help="PB file to preload into memory (origin below 0x8000)")
+                     help="PB file to preload into memory")
     run.add_argument("--keep", type=Path, metavar="DIR", help="run in DIR and keep the disks and tty.out there")
     run.add_argument("--wait", type=float, default=1.5, help="seconds to wait after each command (default 1.5)")
 

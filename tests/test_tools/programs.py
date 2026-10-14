@@ -9,8 +9,7 @@ with ``MEMEXEC``. Programs print their results as lines of hex bytes::
 :func:`parse_results` turns such output into ``(name, [values])`` pairs.
 
 Memory used: 0x4000 (``testlib``) up to 0x5FFF for programs, and
-0x7000-0x73FF as scratch RAM. Everything is below 0x8000, the highest origin
-aprsim can load.
+0x7000-0x73FF as scratch RAM.
 """
 
 from __future__ import annotations

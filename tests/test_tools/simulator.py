@@ -151,9 +151,7 @@ class Session:
     ``disks`` maps disk numbers (0-8) to images; disk 0 is booted. The OS
     image in disk 0's track 0 (sectors 0-61) is always replaced by
     ``build``'s, so a disk prepared earlier boots the current OS.
-    ``programs`` are extra PB files loaded into memory before the boot. They
-    must be below 0x8000: aprsim stores the load origin in a signed 16-bit
-    variable, so higher origins are written out of bounds.
+    ``programs`` are extra PB files loaded into memory before the boot.
     """
 
     tools: Tools
@@ -187,8 +185,6 @@ class Session:
             image.save(directory / f"{number}.dsk")
         program_files = []
         for index, program in enumerate(self.programs):
-            if program[5] >= 0x80:
-                raise ValueError("aprsim cannot load programs at or above 0x8000")
             path = directory / f"program{index}.bin"
             path.write_bytes(program)
             program_files.append(path.name)

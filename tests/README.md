@@ -134,7 +134,7 @@ On a `SessionResult`:
 - **`testlib.asm`,** which prints hex;
 - **`testmacros.asm`,** with macros such as `TM_SET`, `TM_PREG` and `TM_LABEL`.
 
-Scratch RAM for the programs is 0x7000–0x73FF. The simulator can't load programs at 0x8000 or above, because its loader stores the origin in a signed 16-bit variable.
+Scratch RAM for the programs is 0x7000–0x73FF.
 
 To add a program:
 1. Give it a free `#segment` in that range. The tests check that programs don't overlap.
