@@ -6,10 +6,20 @@ commands one key at a time, then quits with F1. Everything the OS writes to
 port 7 goes to a FIFO, which is read in the background and replayed through
 :class:`~test_tools.terminal.Terminal`.
 
-Typing has to be slow: the simulator only passes a key to the program if it
-arrives while the program is waiting in ``PRTin 2``; otherwise the key is
-swallowed, and a swallowed space *pauses* the simulator. After a long-running
-command, add a :class:`Wait`.
+Keys must only be typed while the program is waiting in ``PRTin 2``: the
+simulator swallows any other key, and a swallowed space *pauses* it. So the
+session waits for the program's response before each key, never for a fixed
+time unless it has to:
+
+- after a typed key, until the shell echoes it (at most ``key_delay``);
+- after Enter (and the last key of :class:`Keys`), until the next prompt
+  (at most the step's wait, by default ``command_wait``);
+- during a :class:`Wait`, until the next prompt if one is still due (no
+  wait at all otherwise);
+- at the start, until the first prompt (at most ``boot_wait``).
+
+A wait that reaches its limit just moves on, so a command that never prints
+a prompt (a Y/N question, a fault) costs its full wait.
 
 Example::
 
@@ -23,10 +33,9 @@ from __future__ import annotations
 
 import fcntl
 import os
-import pty
 import select
-import signal
 import struct
+import subprocess
 import tempfile
 import termios
 import time
@@ -40,8 +49,15 @@ from .diskimage import OS_SECTORS, SECTOR_SIZE, DiskImage
 from .terminal import Terminal
 
 ENTER = b"\r"
-PROMPT = b">"            # the shell's prompt; nothing before the first one contains it
-PROMPT_SETTLE = 0.3      # seconds from the prompt until the shell is reading keys
+PROMPT = b"\n>"          # the shell's prompt (SHELLMEM_PROMPT)
+PROMPT_SETTLE = 0.05     # seconds from the prompt until the shell is reading keys
+ECHO_SETTLE = 0.01       # seconds from a key's echo until the shell is reading keys
+EXIT_WAIT = 5.0          # seconds to wait for the simulator to exit after F1
+
+# What ends a stroke's wait early (see the module docstring)
+UNTIL_ECHO = "echo"          # any new terminal output
+UNTIL_PROMPT = "prompt"      # the next prompt
+UNTIL_PENDING = "pending"    # the next prompt, if one is still due; else wait the full time
 F1 = b"\x1bOP"
 DELETE = b"\x7f"
 
@@ -64,7 +80,10 @@ class Keys:
 
 @dataclass(frozen=True)
 class Wait:
-    """Do nothing for ``seconds``, for example while a long command runs."""
+    """Wait up to ``seconds`` more for the last command's prompt, for example while a long command runs.
+
+    If the prompt has already arrived, it doesn't wait at all.
+    """
 
     seconds: float
 
@@ -200,94 +219,146 @@ class Session:
             disks={n: DiskImage.load(directory / f"{n}.dsk") for n in disks},
             simulator_status=status)
 
-    def _keystrokes(self, steps: list[Step]) -> list[tuple[bytes, float, bytes | None]]:
-        """The (bytes to type, seconds to wait afterwards, output that ends the wait early) sequence.
+    def _keystrokes(self, steps: list[Step]) -> list[tuple[bytes, float, str | None]]:
+        """The (bytes to type, longest wait afterwards, what ends the wait early) sequence.
 
-        The boot wait ends PROMPT_SETTLE seconds after the shell's first
-        prompt; ``boot_wait`` is only the limit, for boots that never reach
-        the shell.
+        It starts by switching to RUN mode and running ("m", "m", space), and
+        ends with F1.
         """
-        strokes = [(b"m", 0.2, None), (b"m", 0.2, None), (b" ", self.boot_wait, PROMPT)]
+        strokes = [(b"mm ", self.boot_wait, UNTIL_PROMPT)]
         for step in steps:
             if isinstance(step, Wait):
-                strokes.append((b"", step.seconds, None))
+                strokes.append((b"", step.seconds, UNTIL_PENDING))
                 continue
             data = step.text.encode("latin-1")
-            strokes += [(data[i:i + 1], self.key_delay, None) for i in range(len(data))]
+            strokes += [(data[i:i + 1], self.key_delay, UNTIL_ECHO) for i in range(len(data))]
             wait = self.command_wait if step.wait is None else step.wait
             if isinstance(step, Type):
-                strokes.append((ENTER, wait, None))
-            elif strokes:
-                strokes[-1] = (strokes[-1][0], wait, None)
-        strokes.append((F1, 1.0, None))
+                strokes.append((ENTER, wait, UNTIL_PROMPT))
+            elif data:
+                strokes[-1] = (strokes[-1][0], wait, UNTIL_PROMPT)
+        strokes.append((F1, 0.0, None))
         return strokes
 
 
 # --------------------------------------------------------------- internals
 
-def _drive(command: list[str], cwd: Path, strokes: list[tuple[bytes, float, bytes | None]],
+def _drive(command: list[str], cwd: Path, strokes: list[tuple[bytes, float, str | None]],
            fifo_fd: int, captured: bytearray) -> str:
     """Run ``command`` in a pseudo-terminal, typing ``strokes``. Returns how it ended.
 
     Terminal output from the program arrives on ``fifo_fd`` and is appended
     to ``captured``.
     """
-    pid, fd = pty.fork()
-    if pid == 0:                                   # child: become the simulator
-        os.chdir(cwd)
-        os.environ["TERM"] = "xterm"
-        os.execvp(command[0], command)
-
+    # subprocess forks and execs in C, which is safe in a multi-threaded
+    # process (pytest-xdist workers are); pty.fork() runs Python in the child.
+    fd, terminal = os.openpty()
     fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", 40, 120, 0, 0))
-    alive = _drain(fd, fifo_fd, captured, 0.5)
+    try:
+        simulator = subprocess.Popen(command, cwd=cwd, env={**os.environ, "TERM": "xterm"},
+                                     stdin=terminal, stdout=terminal, stderr=terminal,
+                                     start_new_session=True)
+    finally:
+        os.close(terminal)
+    try:
+        return _type_strokes(simulator, fd, strokes, fifo_fd, captured)
+    finally:
+        if simulator.poll() is None:            # only if typing failed part way
+            simulator.kill()
+            simulator.wait()
+        os.close(fd)
+
+
+def _type_strokes(simulator: subprocess.Popen, fd: int, strokes: list[tuple[bytes, float, str | None]],
+                  fifo_fd: int, captured: bytearray) -> str:
+    """Type ``strokes`` into the simulator on terminal ``fd``, then wait for it to exit. Returns how it ended."""
+    alive = _wait_for_screen(fd, fifo_fd, captured, 2.0)
+    prompt_due_from = None          # where to look for a prompt that is still due
     for data, wait, until in strokes:
         if not alive:
             break
+        start = len(captured)
         if data:
             try:
                 os.write(fd, data)
             except OSError:
                 break
-        alive = _drain(fd, fifo_fd, captured, wait, until)
-    _drain(fd, fifo_fd, captured, 1.0)
+        if until == UNTIL_PROMPT:
+            prompt_due_from = start
+        if until == UNTIL_ECHO:
+            alive, _ = _drain(fd, fifo_fd, captured, wait, start, b"", ECHO_SETTLE)
+        elif until in (UNTIL_PROMPT, UNTIL_PENDING) and prompt_due_from is not None:
+            alive, found = _drain(fd, fifo_fd, captured, wait, prompt_due_from, PROMPT, PROMPT_SETTLE)
+            if found:
+                prompt_due_from = None
+        elif until == UNTIL_PENDING:
+            pass                    # the prompt has already arrived
+        else:
+            alive, _ = _drain(fd, fifo_fd, captured, wait)
 
-    deadline = time.time() + 3.0
-    done, status = os.waitpid(pid, os.WNOHANG)
-    while done == 0 and time.time() < deadline:
-        time.sleep(0.05)
-        done, status = os.waitpid(pid, os.WNOHANG)
+    deadline = time.time() + EXIT_WAIT
+    while simulator.poll() is None and time.time() < deadline:
+        _drain(fd, fifo_fd, captured, 0.02)
     _read_available(fifo_fd, captured)
-    if done == 0:
-        os.kill(pid, signal.SIGKILL)
-        os.waitpid(pid, 0)
+    if simulator.returncode is None:
+        simulator.kill()
+        simulator.wait()
         return "still running at the end (killed)"
-    if os.WIFSIGNALED(status):
-        return f"killed by signal {os.WTERMSIG(status)}"
-    return f"exited with code {os.WEXITSTATUS(status)}"
+    if simulator.returncode < 0:
+        return f"killed by signal {-simulator.returncode}"
+    return f"exited with code {simulator.returncode}"
 
 
-def _drain(fd: int, fifo_fd: int, captured: bytearray, seconds: float, until: bytes | None = None) -> bool:
-    """For ``seconds``, discard the simulator's screen output and collect terminal output.
+def _wait_for_screen(fd: int, fifo_fd: int, captured: bytearray, seconds: float) -> bool:
+    """Wait (at most ``seconds``) until the simulator has drawn its screen, so it reads keys.
 
-    If ``until`` is given, stop PROMPT_SETTLE seconds after new terminal
-    output contains it. Returns False once the simulator has gone away.
+    Returns False once the simulator has gone away.
     """
     end = time.time() + seconds
-    seen = len(captured)
     while time.time() < end:
         ready = select.select([fd, fifo_fd], [], [], 0.05)[0]
         if fifo_fd in ready:
             _read_available(fifo_fd, captured)
-            if until is not None and until in captured[seen:]:
-                end = min(end, time.time() + PROMPT_SETTLE)
-                until = None
         if fd in ready:
             try:
                 if not os.read(fd, 65536):
                     return False
             except OSError:
                 return False
-    return True
+            break
+    return _drain(fd, fifo_fd, captured, 0.1)[0]
+
+
+def _drain(fd: int, fifo_fd: int, captured: bytearray, seconds: float,
+           start: int = 0, until: bytes | None = None, settle: float = 0.0) -> tuple[bool, bool]:
+    """For ``seconds``, discard the simulator's screen output and collect terminal output.
+
+    If ``until`` is given, stop ``settle`` seconds after ``captured[start:]``
+    contains it (``b""``: as soon as there is any output after ``start``).
+    Returns (False once the simulator has gone away, whether ``until`` was found).
+    """
+    end = time.time() + seconds
+    found = False
+
+    def check() -> None:
+        nonlocal end, found
+        if until is not None and not found and len(captured) > start and until in captured[start:]:
+            found = True
+            end = min(end, time.time() + settle)
+
+    check()
+    while time.time() < end:
+        ready = select.select([fd, fifo_fd], [], [], min(0.05, max(0.0, end - time.time())))[0]
+        if fifo_fd in ready:
+            _read_available(fifo_fd, captured)
+            check()
+        if fd in ready:
+            try:
+                if not os.read(fd, 65536):
+                    return False, found
+            except OSError:
+                return False, found
+    return True, found
 
 
 def _read_available(fifo_fd: int, captured: bytearray) -> None:

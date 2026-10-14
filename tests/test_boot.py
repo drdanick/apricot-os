@@ -50,11 +50,23 @@ def build_disk(os_build) -> DiskImage:
     return DiskImage(os_build.disk_image)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def boot_disk(boot):
     """``boot_disk(disks)``: boot, type one command, and return the session."""
     def run(disks):
         return boot(["ECHO SHELL RUNNING"], disks=disks)
+    return run
+
+
+@pytest.fixture
+def boot_halting(boot):
+    """``boot_halting(disks)``: boot a disk the loader rejects, type one key, and return the session.
+
+    The loader gives up within about 3 s (three tries at selecting disk 0, a
+    second apart), and the shell would have printed its prompt by then.
+    """
+    def run(disks):
+        return boot(["X"], disks=disks, boot_wait=4.0, command_wait=0.5)
     return run
 
 
@@ -69,24 +81,24 @@ def test_a_valid_bootable_disk_boots(boot_disk, build_disk):
     assert result["ECHO SHELL RUNNING"] == "SHELL RUNNING"
 
 
-def test_no_disk_0_is_a_read_error(boot_disk, build_disk):
+def test_no_disk_0_is_a_read_error(boot_halting, build_disk):
     # Disk 1 exists, but the loader only ever boots disk 0.
-    assert_halted_with(boot_disk({1: build_disk}), READ_ERROR)
+    assert_halted_with(boot_halting({1: build_disk}), READ_ERROR)
 
 
 @pytest.mark.parametrize("signature", BAD_SIGNATURES)
-def test_a_bad_signature_is_not_valid(boot_disk, build_disk, signature):
-    assert_halted_with(boot_disk({0: patched(build_disk, 0, signature)}), NOT_VALID)
+def test_a_bad_signature_is_not_valid(boot_halting, build_disk, signature):
+    assert_halted_with(boot_halting({0: patched(build_disk, 0, signature)}), NOT_VALID)
 
 
-def test_the_signature_is_checked_before_the_boot_flag(boot_disk, build_disk):
+def test_the_signature_is_checked_before_the_boot_flag(boot_halting, build_disk):
     disk = patched(patched(build_disk, 0, "00 00 00 00"), 254, "00 00")
-    assert_halted_with(boot_disk({0: disk}), NOT_VALID)
+    assert_halted_with(boot_halting({0: disk}), NOT_VALID)
 
 
 @pytest.mark.parametrize("flag", BAD_BOOT_FLAGS)
-def test_a_bad_boot_flag_is_not_bootable(boot_disk, build_disk, flag):
-    assert_halted_with(boot_disk({0: patched(build_disk, 254, flag)}), NOT_BOOTABLE)
+def test_a_bad_boot_flag_is_not_bootable(boot_halting, build_disk, flag):
+    assert_halted_with(boot_halting({0: patched(build_disk, 254, flag)}), NOT_BOOTABLE)
 
 
 @pytest.fixture(scope="module")

@@ -76,15 +76,15 @@ Locations are `(track, sector)` tuples. The constants (`TRACKS`, `SECTOR_SIZE`, 
 
 ### `simulator`
 
-`Session(tools, build, disks={}, programs=[], boot_wait=6.0, key_delay=0.2, command_wait=1.5, workdir=None)` is one run of the simulator. `session.run(steps)` writes the disks and programs to a working directory, starts `aprsim` in a pseudo-terminal with port-7 output going to a FIFO, switches it to RUN mode, waits for the boot (until shortly after the shell's first `>` prompt, or at most `boot_wait` seconds), types the steps, quits with F1, and returns a `SessionResult`. Disk 0 always gets the current build's OS image, so a disk made earlier boots the current code. Programs are PB files loaded into memory before boot; their origin must be below `0x8000`.
+`Session(tools, build, disks={}, programs=[], boot_wait=6.0, key_delay=0.2, command_wait=1.5, workdir=None)` is one run of the simulator. `session.run(steps)` writes the disks and programs to a working directory, starts `aprsim` in a pseudo-terminal with port-7 output going to a FIFO, switches it to RUN mode, waits for the boot (until the shell's first prompt, or at most `boot_wait` seconds), types the steps, quits with F1, and returns a `SessionResult`. Disk 0 always gets the current build's OS image, so a disk made earlier boots the current code. Programs are PB files loaded into memory before boot; their origin must be below `0x8000`.
 
 Steps are:
 
 - a string, or `Type(text, wait=None)`: typed, then Enter, then a pause;
 - `Keys(text, wait=None)`: typed without Enter, for prompts such as `FORMAT`'s confirmation;
-- `Wait(seconds)`: a pause, for a long-running command.
+- `Wait(seconds)`: wait up to `seconds` more for the last command's prompt, for a long-running command (no wait if it has already arrived).
 
-Typing has to be slow. The simulator only passes a key to the OS while the OS is waiting for input; a key that arrives while it is busy is lost, and a lost space pauses the simulator. Hence one key every `key_delay` seconds and `command_wait` seconds after each command. Raise them if output is cut short on a slow or busy machine.
+The simulator only passes a key to the OS while the OS is waiting for input; a key that arrives while it is busy is lost, and a lost space pauses the simulator. So the session waits for a response before typing on: each key's echo (at most `key_delay` seconds), and the next prompt after Enter or the last key of `Keys` (at most `command_wait` seconds, or the step's `wait`). A wait that reaches its limit moves on, so a step that never prints a prompt costs its full wait. Raise the limit for a command that runs longer.
 
 `SessionResult` has:
 

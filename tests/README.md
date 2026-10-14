@@ -39,7 +39,7 @@ The flag wins over the variable. Write a path as `--fsman=PATH` (with `=`): give
 From `apricot-os/tests`:
 
 ```sh
-tox                      # everything (about 20 minutes: most of it is the simulator booting)
+tox                      # everything (several minutes)
 tox -e fast              # only the tests that don't boot the OS (seconds)
 tox -- -k test_cat       # pass options through to pytest
 pytest test_shell.py     # or run pytest directly
@@ -50,7 +50,7 @@ The same `--aprsim` and `--fsman` flags work with `python -m test_tools` (before
 
 ### Things that affect timing
 
-The simulator only passes a key to the OS while the OS is waiting for input. A key that arrives while it's busy is lost, and a lost space pauses the simulator. The harness therefore types one key every 0.2 seconds and waits after each command. If tests fail with output cut short on a slow or busy machine, increase the waits (`Session(..., command_wait=...)`). Running the tests in parallel makes this more likely.
+The simulator only passes a key to the OS while the OS is waiting for input. A key that arrives while it's busy is lost, and a lost space pauses the simulator. So the harness waits for the OS's response before typing on: each key's echo (at most `key_delay`, 0.2 s), the next prompt after a command (at most `command_wait`, 1.5 s, or the step's own wait), and the first prompt after booting (at most `boot_wait`, 6 s). A wait that reaches its limit just moves on, so a command that never prints a prompt (a Y/N question, a fault) costs its full wait. If output is cut short because a command takes longer than its limit, give that step a longer wait (`Type("CP A B", wait=10)`) or follow it with `Wait(seconds)`.
 
 ## Layout
 
@@ -115,7 +115,7 @@ def test_disk_after(session):
 | `os_build` | The build, including `units`, `symbols` and `problems` |
 | `library_programs` | The assembled test programs |
 
-`steps` are strings (typed, then Enter), `Keys("Y")` (typed without Enter), or `Wait(seconds)`.
+`steps` are strings (typed, then Enter), `Keys("Y")` (typed without Enter), or `Wait(seconds)` (wait up to that long for the last command's prompt).
 
 On a `SessionResult`:
 - **`session["CMD"]`** is the output of the first `CMD`;
