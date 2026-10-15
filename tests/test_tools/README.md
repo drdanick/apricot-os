@@ -63,7 +63,7 @@ The tests prepare disks with fs-manager rather than with the OS, so the two file
 
 ### `diskimage`
 
-`DiskImage` is a mutable 512 KiB image: 32 tracks of 64 sectors of 256 bytes. Track 0 holds the OS image (sectors 0 to 61), the volume information (sector 62) and the space bitmap (sector 63); the root directory is at track 1, sector 0. The format is in `APRICOS_DEVELOPMENT_GUIDE.md`, Appendix A.
+`DiskImage` is a mutable 512 KiB image: 32 tracks of 64 sectors of 256 bytes. Track 0 holds the OS image (sectors 0 to 61), the space bitmap (sector 62) and the volume information (sector 63); the root directory is at track 1, sector 0. The format is in `APRICOS_DEVELOPMENT_GUIDE.md`, Appendix A.
 
 - Storage: `DiskImage()` (all zeros), `DiskImage(bytes)`, `DiskImage.load(path)`, `image.save(path)`, `image.copy()`, and the raw `image.data` bytearray.
 - Sectors: `sector(track, sector)` and `write_sector(track, sector, content)`.

@@ -231,7 +231,7 @@ FREE_SECTOR:
 
 
 ;
-; Write the in-memory space bitmap back to disk (track 0, sector 63).
+; Write the in-memory space bitmap back to disk (track 0, sector 62).
 ;
 ; Volatile registers:
 ; $a8 - $a11
@@ -241,7 +241,7 @@ FLUSH_BITMAP:
     DISKIO_TRACKSEL 0
     LARh FSMEM_VOL_BITMAP
     ASET 9
-    LARl 63
+    LARl 62
     ASET 10
     OS_SYSCALL DISKIO_COPYTODSK
 

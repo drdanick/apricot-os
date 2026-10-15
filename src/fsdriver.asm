@@ -59,16 +59,16 @@ MOUNT_DISK:
     ASET 8
     DISKIO_TRACKSEL 0
 
-    ; Load the volume information sector into memory (sector 62)
-    LARl 62
+    ; Load the volume information sector into memory (sector 63)
+    LARl 63
     ASET 9
     LARh FSMEM_VOL_INFO
     ASET 10
     OS_SYSCALL DISKIO_COPYFROMDSK
 
-    ; Load the space bitmap sector into memory (sector 63)
+    ; Load the space bitmap sector into memory (sector 62)
     ASET 8
-    LARl 63
+    LARl 62
     ASET 9
     LARh FSMEM_VOL_BITMAP
     ASET 10

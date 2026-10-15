@@ -5,7 +5,7 @@ import pytest
 
 from test_tools.assembler import find_cross_page_local_calls, find_page_end_branches, read_pb, units_from_assemble_script
 from test_tools.config import ASSEMBLE_SCRIPT
-from test_tools.diskimage import IMAGE_SIZE, ROOT, DiskImage
+from test_tools.diskimage import IMAGE_SIZE, ROOT, VOLUME_SECTOR, DiskImage
 from test_tools.programs import parse_results, results_named
 from test_tools.terminal import CLEAR_MARKER, Terminal
 
@@ -70,7 +70,7 @@ class TestDiskImage:
         image = DiskImage()
         image.set_allocated(25, 2)
         assert image.is_allocated(25, 2)
-        assert image.data[DiskImage.offset(0, 63) + 200] == 0b100
+        assert image.data[DiskImage.offset(0, 62) + 200] == 0b100
         image.set_allocated(25, 2, False)
         assert not image.is_allocated(25, 2)
 
@@ -151,7 +151,7 @@ def test_parse_results():
 
 def _formatted() -> DiskImage:
     image = DiskImage()
-    image.write_sector(0, 62, bytes([0xC0, 0x30, 0x0C, 0x03]) + bytes(252))
+    image.write_sector(0, VOLUME_SECTOR, bytes([0xC0, 0x30, 0x0C, 0x03]) + bytes(252))
     for sector in range(64):
         image.set_allocated(0, sector)
     image.set_allocated(*ROOT)

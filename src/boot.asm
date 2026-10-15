@@ -21,7 +21,7 @@
 ; What it does:
 ;   1. Sets up the TTY for printing.
 ;   2. Selects disk 0, trying three times, one second apart.
-;   3. Reads track 0, sector 62 (volume information) and checks it:
+;   3. Reads track 0, sector 63 (volume information) and checks it:
 ;      bytes 0-3 must be the signature C0 30 0C 03, and bytes 254-255 the boot
 ;      flag AA 55.
 ;   4. Copies disk sectors 0-3 into memory segments 1-4, then jumps to 0x0100
@@ -123,7 +123,7 @@ LARl HALT
 SPUSH
 JMP PRINT_STRING
 
-; Read track 0, sector 62 (volume information) into the disk buffer at 0xFE00.
+; Read track 0, sector 63 (volume information) into the disk buffer at 0xFE00.
 CHECK_DISK:
 ; Select track 0
 ASET 15
@@ -134,9 +134,9 @@ PRTout 0x04
 LARl 0xFE  ; Use $a15 to hold the base address of the disk paging region
 
 ASET 0     ; Use $a0 to hold the disk segment number we want to read
-LARl 0x3E
+LARl 0x3F
 
-; Load sector 0x3E
+; Load sector 0x3F
 PRTout 0x05
 
 ; Check that the first 4 bytes of this sector are exactly 0xC0, 0x30, 0x0C, and 0x03.

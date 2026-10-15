@@ -280,5 +280,5 @@ xFF  | 255 | [Stack space]
 
 Notes:
 - Segments 1-61 are loaded from disk at boot. Code must live there.
-- Disk sectors 62 and 63 of track 0 hold the volume information and the
-  space bitmap, so no unit may use #segment 62 or higher.
+- Disk sectors 62 and 63 of track 0 hold the space bitmap and the volume
+  information, so no unit may use #segment 62 or higher.

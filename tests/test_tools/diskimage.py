@@ -1,8 +1,11 @@
 """Reading, checking and preparing Apricot disk images.
 
 A disk image is 32 tracks x 64 sectors x 256 bytes (512 KiB). Track 0 holds
-the OS image (sectors 0-61), the volume information (sector 62) and the
-space bitmap (sector 63). The filesystem format is described in
+the OS image (sectors 0-61), the space bitmap (sector 62) and the volume
+information (sector 63). Numbers here are the stored, 0-based ones; the spec
+(apricot-os-documentation/filesystem/filesystem.tex) numbers tracks and
+sectors from 1, so it calls these sectors 63 and 64 of track 1. The
+filesystem format is described in
 APRICOS_DEVELOPMENT_GUIDE.md, Appendix A and section 5.7.
 
 :class:`DiskImage` gives structured access to an image, and
@@ -22,8 +25,8 @@ SECTORS_PER_TRACK = 64
 SECTOR_SIZE = 256
 IMAGE_SIZE = TRACKS * SECTORS_PER_TRACK * SECTOR_SIZE
 OS_SECTORS = 62
-VOLUME_SECTOR = 62
-BITMAP_SECTOR = 63
+BITMAP_SECTOR = 62     # the second to last sector of track 0
+VOLUME_SECTOR = 63     # the last sector of track 0
 ROOT = (1, 0)
 SIGNATURE = bytes([0xC0, 0x30, 0x0C, 0x03])
 BOOT_FLAG = bytes([0xAA, 0x55])

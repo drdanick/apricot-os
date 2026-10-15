@@ -1,7 +1,7 @@
 """The stage 1 boot loader (boot.asm): it boots only a valid, bootable disk 0.
 
 The loader selects disk 0 (three tries), then checks the volume information
-sector (track 0, sector 62): the disk signature in bytes 0-3, then the boot
+sector (track 0, sector 63): the disk signature in bytes 0-3, then the boot
 flag ``AA 55`` in bytes 254-255. A failed check prints a message and halts.
 
 Each case is a boot of its own. A command typed after the boot checks that

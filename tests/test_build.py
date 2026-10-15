@@ -39,10 +39,11 @@ def test_every_source_unit_is_built(os_build):
 def test_disk_image_layout(os_build):
     image = DiskImage(os_build.disk_image)
     assert len(os_build.disk_image) == IMAGE_SIZE
-    assert image.sector(0, 62)[:4] == SIGNATURE
+    # Volume information in the last sector of track 0, the bitmap before it
+    assert image.sector(0, 63)[:4] == SIGNATURE
     assert image.bootable
     # The assembler's image has no filesystem: the bitmap and root are empty.
-    assert not any(image.sector(0, 63))
+    assert not any(image.sector(0, 62))
 
 
 def test_boot_loader_is_a_pb_file_at_address_0(os_build):

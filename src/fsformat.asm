@@ -355,7 +355,7 @@ PREP_VOLINFO:
 
 
 ;
-; Write FSMEM_VOL_INFO to track 0, sector 62.
+; Write FSMEM_VOL_INFO to track 0, sector 63.
 ;
 ; Volatile registers:
 ; $a8-$a11
@@ -365,7 +365,7 @@ FLUSH_VOLINFO:
     DISKIO_TRACKSEL 0
     LARh FSMEM_VOL_INFO
     ASET 9
-    LARl 62
+    LARl 63
     ASET 10
     OS_SYSCALL DISKIO_COPYTODSK
     ASET 10
