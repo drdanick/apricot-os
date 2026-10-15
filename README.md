@@ -15,11 +15,12 @@ The following notable features are currently implemented:
 - A two stage bootloader
 - A collection of system libraries and routines
 - A functional shell for user input
+- A filesystem on the boot disk, with shell commands to manage files and directories
+  (see [docs/COMMANDS.md](docs/COMMANDS.md))
 
 
 Additionally, the following features are planned:
 
-- A functional filesystem
 - The ability to execute programs stored on a filesystem
 - A simple BASIC interpreter (this is a huge stretch and probably won't happen)
 
@@ -99,10 +100,10 @@ Writing programs
 
 A sample, non-system program is included in `testprogram.asm`. Since there is currently no mechanism of loading
 new programs from a filesystem post-boot, any extra programs must be assembled along with the Operating System
-and placed somewhere in memory. In the case of the included test program, it is placed at address 0x1500.
+and placed somewhere in memory. In the case of the included test program, it is placed at address 0x3D00.
 
 A shell command is included to jump to and execute arbitrary addresses given in hex. To execute the included sample
-program, you can enter `memexec 1500` into the shell.
+program, you can enter `memexec 3D00` into the shell.
 
 Please see [testprogram.asm](src/testprogram.asm) for more details.
 
@@ -110,13 +111,19 @@ Please see [testprogram.asm](src/testprogram.asm) for more details.
 Shell commands
 --------------
 
-The Apricot OS shell features a few working commands:
+See **[docs/COMMANDS.md](docs/COMMANDS.md)** for a reference covering every shell command (`help`, `echo`, `cls`,
+`memexec`, and the filesystem commands `ls`, `cd`, `cat`, `write`, `cp` and the rest), plus name rules, limits and
+error messages.
 
-| Command   | Function                                              | Example      |
-| --------- | ----------------------------------------------------- | ------------ |
-| echo      | Takes a string and echoes it back to the shell        | echo hello   |
-| cls       | Clears the screen                                     | cls          |
-| memexec   | Jumps to and executes a given 4 character hex address | memexec 1500 |
+A disk image produced by `assemble.sh` contains no filesystem. Boot it and enter `format` to create one.
+
+
+Testing
+-------
+
+An automated test suite in [tests/](tests/README.md) builds the OS, boots it headlessly in the simulator, and checks
+every shell command, the filesystem, and the library routines. Run it with `tox` from the `tests/` directory; see
+[tests/README.md](tests/README.md) for requirements and options.
 
 
 License

@@ -15,6 +15,7 @@
 #name "portout"
 
 #macro SLEEP            { PRTout 0 }
+#macro DISK_SEL         { PRTout 3 }
 #macro DISK_TRACKSEL    { PRTout 4 }
 #macro DISK_READSECTOR  { PRTout 5 }
 #macro DISK_WRITESECTOR { PRTout 6 }

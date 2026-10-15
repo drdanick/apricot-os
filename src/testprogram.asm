@@ -4,9 +4,9 @@
 ;
 ; To execute this program, assemble it along with 
 ; the rest of the OS, and execute it by entering
-; 'memexec 1500' ino the shell.
+; 'memexec 3D00' into the shell.
 
-#segment 0x15
+#segment 0x3D
 #name "testprogram"
 
 #include "apricotos.asm"

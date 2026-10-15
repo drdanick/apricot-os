@@ -24,6 +24,7 @@
 #include "memutil.asm"
 #include "disp.asm"
 #include "portout.asm"
+#include "fsdriver.asm"
 
 .nearptr MAIN
 
@@ -48,6 +49,10 @@ MAIN:
     LARl SHELLMEM_GREET
     ASET 10
     OS_SYSCALL LIBDISP_PUTSTR
+
+    ; Tell the user if there is no filesystem on the boot disk
+    ASET 8
+    OS_SYSCALL FS_NOTICE
 
     ;JMP SHELL_RUN
 

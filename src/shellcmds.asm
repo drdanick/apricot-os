@@ -24,6 +24,9 @@
 #include "shellmem.asm"
 #include "math.asm"
 #include "portout.asm"
+#include "fscmds.asm"
+#include "fsstat.asm"
+#include "diskcmds.asm"
 
 #macro SHELLCMD_RET {
     SPOP
@@ -41,12 +44,17 @@
 ;=========================================
 
 
-; Pointers to the headers of the builtin shell commands
+; Pointers to the headers of the builtin shell commands.
+; These are .nearptrs, so CMD_ARRAY and every header must stay in this
+; segment (14). Handler bodies can live anywhere (headers hold a .farptr):
+; the filesystem and disk commands point straight into fscmds, fsstat and
+; diskcmds.
 CMD_ARRAY:
 .nearptr HI_H
 .nearptr CD_H
 .nearptr LS_H
 .nearptr CP_H
+.nearptr STAT_H
 .nearptr MV_H
 .nearptr RM_H
 .nearptr PWD_H
@@ -54,7 +62,13 @@ CMD_ARRAY:
 .nearptr CAT_H
 .nearptr ECHO_H
 .nearptr TOUCH_H
+.nearptr MKDIR_H
+.nearptr WRITE_H
 .nearptr MEMEXEC_H
+.nearptr FORMAT_H
+.nearptr FSSTAT_H
+.nearptr DISKSEL_H
+.nearptr DISKSTAT_H
 .nearptr HELP_H
 .fill 0
 
@@ -69,27 +83,31 @@ HI_H:
 .stringz "HI"
 
 CD_H:
-.farptr CD
+.farptr FSCMDS_CD
 .stringz "CD"
 
 LS_H:
-.farptr LS
+.farptr FSCMDS_LS
 .stringz "LS"
 
 CP_H:
-.farptr CP
+.farptr FSCMDS_CP
 .stringz "CP"
 
+STAT_H:
+.farptr FSCMDS_STAT
+.stringz "STAT"
+
 MV_H:
-.farptr MV
+.farptr FSCMDS_MV
 .stringz "MV"
 
 RM_H:
-.farptr RM
+.farptr FSCMDS_RM
 .stringz "RM"
 
 PWD_H:
-.farptr PWD
+.farptr FSCMDS_PWD
 .stringz "PWD"
 
 CLS_H:
@@ -97,7 +115,7 @@ CLS_H:
 .stringz "CLS"
 
 CAT_H:
-.farptr CAT
+.farptr FSCMDS_CAT
 .stringz "CAT"
 
 ECHO_H:
@@ -105,12 +123,36 @@ ECHO_H:
 .stringz "ECHO"
 
 TOUCH_H:
-.farptr TOUCH
+.farptr FSCMDS_TOUCH
 .stringz "TOUCH"
+
+MKDIR_H:
+.farptr FSCMDS_MKDIR
+.stringz "MKDIR"
+
+WRITE_H:
+.farptr FSCMDS_WRITE
+.stringz "WRITE"
 
 MEMEXEC_H:
 .farptr MEMEXEC
 .stringz "MEMEXEC"
+
+FORMAT_H:
+.farptr FSCMDS_FORMAT
+.stringz "FORMAT"
+
+FSSTAT_H:
+.farptr FSSTAT_FSSTAT
+.stringz "FSSTAT"
+
+DISKSEL_H:
+.farptr DISKCMDS_DISKSEL
+.stringz "DISKSEL"
+
+DISKSTAT_H:
+.farptr DISKCMDS_DISKSTAT
+.stringz "DISKSTAT"
 
 HELP_H:
 .farptr HELP
@@ -139,24 +181,6 @@ HI:
     OS_SYSCALL LIBDISP_PUTSTR
     SHELLCMD_RET
 
-CD:
-    OS_SYSJUMP WIP
-
-LS:
-    OS_SYSJUMP WIP
-
-CP:
-    OS_SYSJUMP WIP
-
-MV:
-    OS_SYSJUMP WIP
-
-RM:
-    OS_SYSJUMP WIP
-
-PWD:
-    OS_SYSJUMP WIP
-
 CLS:
     AND 0
     ADD 3
@@ -170,8 +194,11 @@ CLS:
     PORTOUT_TTY_WRITE
     SHELLCMD_RET
 
-CAT:
-    OS_SYSJUMP WIP
+; ===============================================
+;                SEGMENT BOUNDARY
+; ===============================================
+; Segment 15: handler bodies that don't fit in segment 14
+.padseg 0
 
 ECHO:
     ASET 8
@@ -185,9 +212,6 @@ ECHO:
     OS_SYSCALL LIBDISP_PUTSTR
 
     SHELLCMD_RET
-
-TOUCH:
-    OS_SYSJUMP WIP
 
 MEMEXEC:
     ASET 8
@@ -221,11 +245,6 @@ MEMEXEC:
     OS_SYSCALL OSUTIL_POPALLREGS
     SHELLCMD_RET
 
-
-; ===============================================
-;                SEGMENT BOUNDARY
-; ===============================================
-.padseg 0
 
 HELP: 
     ASET 8

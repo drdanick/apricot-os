@@ -15,6 +15,27 @@
 ; ==                               ==
 ; ===================================
 ;
+; The simulator loads this file at 0x0000 and starts it there. It must fit in
+; one segment (256 bytes), because stage 2 copies itself over segment 0.
+;
+; What it does:
+;   1. Sets up the TTY for printing.
+;   2. Selects disk 0, trying three times, one second apart.
+;   3. Reads track 0, sector 63 (volume information) and checks it:
+;      bytes 0-3 must be the signature C0 30 0C 03, and bytes 254-255 the boot
+;      flag AA 55.
+;   4. Copies disk sectors 0-3 into memory segments 1-4, then jumps to 0x0100
+;      (stage 2, s2boot.asm).
+; If a step fails, it prints an error message and halts.
+;
+; Registers:
+;   $a0  disk ID (0), then the sector to read / segment to write
+;   $a1  negative counter: retries left, then sectors left to copy
+;   $a8  always 0: the segment of the strings and return addresses
+;   $a9  address of the string to print
+;   $a14 100, the sleep time for retries and HALT (100 x 10 ms)
+;   $a15 0xFE, the segment of the disk buffer (0xFE00-0xFEFF)
+;
 #name "bootloader"
 #segment 0
 
@@ -44,6 +65,8 @@
 ;==                                     ==
 ;=========================================
 ;TODO: TTY should not have the cursor invisible by default
+; TTY setup: 03 (end any command), 12 12 (clear screen), 0C 02 (green text),
+; 7F 00 (repeat mode: every byte from now on is a character to print).
 TTY_MODE 0x03   ; End any previous TTY command
 CLS             ; Clear screen
 
@@ -62,8 +85,8 @@ PRTout 7
 ASET 14
 LARl 100
 
-; Select first disk and try to read.
-; Give up on 3rd attempt and print error
+; Select disk 0. The disk status port reads 0xFF while no disk is open.
+; Try three times, one second apart, then give up with "Disk read error!".
 
 ASET 1    ; $a1 will hold a negation of the counter we want (-3)
 LARl 0xFD ; 0xFD is -3
@@ -91,9 +114,16 @@ BRnz LOAD_DISK
 ; If counter is positive, print an error and halt.
 ASET 9
 LARl DISK_READ_ERROR
-JMP INVALID_DISK
 
-; Check that the disk is bootable
+; Print the error message at $a9, then halt.
+; It pushes HALT as the return address, so PRINT_STRING "returns" into HALT.
+INVALID_DISK:
+ASET 10
+LARl HALT
+SPUSH
+JMP PRINT_STRING
+
+; Read track 0, sector 63 (volume information) into the disk buffer at 0xFE00.
 CHECK_DISK:
 ; Select track 0
 ASET 15
@@ -101,86 +131,70 @@ AND 0
 PRTout 0x04
 
 ; NOTE: The disk paging sector is 0xFE
-LAh 0xFE   ; Use $a15 to hold the base address of the disk paging region
-LDah
+LARl 0xFE  ; Use $a15 to hold the base address of the disk paging region
 
 ASET 0     ; Use $a0 to hold the disk segment number we want to read
-LARl 0x3E
+LARl 0x3F
 
-; Load sector 0x3E
+; Load sector 0x3F
 PRTout 0x05
 
-; Check that the first 4 bytes of this sector are 0xC0, 0x30, 0x0C, and 0x03 (xoring them together will produce 0xFF)
+; Check that the first 4 bytes of this sector are exactly 0xC0, 0x30, 0x0C, and 0x03.
+; Each byte is the previous one shifted right by 2, and one more shift gives 0, so
+; $a11 holds both the expected byte and the loop counter.
 ASET 15
-STah
+STah       ; $mr = 0xFE00 (this also leaves $a15 = 0 until the next check)
 AND 0
 STal
 
-ASET 10
-LD        ; Load first char
-SPUSH
-LDal
-ADD 1
-STal
-LD        ; Load second char
-SPUSH
-LDal
-ADD 1
-STal
-LD        ; Load third char
-SPUSH
-LDal
-ADD 1
-STal
-LD        ; Load fourth char
-SPOP XOR  ; Pop the other three characters
-SPOP XOR
-SPOP XOR
-ADD 1     ; Adding 1 should make it equal to zero
-
-BRz BOOT_CODE_CHECK
-
-; Disk is not valid
-ASET 9
+ASET 9     ; The message if a check fails
 LARl DISK_FORMAT_ERROR
-JMP INVALID_DISK
 
-BOOT_CODE_CHECK:
+ASET 11
+LARl 0xC0     ; Expected first byte
+SIG_LOOP:
+    SPUSH     ; $a11 is selected here on every pass
+    ASET 10
+    LD        ; Load the next signature byte
+    SPOP XOR  ; Zero only if it matches
+    BRnp INVALID_DISK
+    LDal      ; $mr += 1
+    ADD 1
+    STal
+    ASET 11
+    SHFr 2    ; 0xC0 -> 0x30 -> 0x0C -> 0x03 -> 0
+    BRnp SIG_LOOP
 
-; Check that the last 2 bytes of this sector are 0xAA and 0x55 (xoring them together will produce 0xFF)
-ASET 15
-LDah
-STal   ; Load the first byte
-ASET 10
-LD
-SPUSH
-
-; Load the second byte
-LDal
-ADD 1
-STal
-LD
-SPOP XOR
-ADD 1   ; Adding 1 should make it equal to zero
-BRz COPY_LOADER
-
-; Disk is not bootable
+; Check that the last 2 bytes of this sector are 0xAA and 0x55.
+; The second byte must be the complement of the first (a ^ b = 0xFF),
+; and b ^ (b << 1) is 0xFF only for b = 0x55.
 ASET 9
 LARl DISK_NOT_BOOTABLE_ERROR
 
-; Common code for printing an error and then halting
-; $a9 must already hold the segment local address of the string to print.
-INVALID_DISK:
+ASET 15
+LDah      ; $a15 = 0xFE again
+STal      ; $mr = 0xFEFE
 ASET 10
-LARl HALT
+LD        ; Load the first byte (a)
 SPUSH
-JMP PRINT_STRING
+LDal
+ADD 1
+STal
+LD        ; Load the second byte (b)
+SPOP XOR  ; a ^ b
+SPUSH
+LD        ; b again
+SPUSH
+SHFl 1
+SPOP XOR  ; b ^ (b << 1)
+SPOP AND  ; 0xFF only if both are 0xFF
+ADD 1     ; Adding 1 should make it equal to zero
+BRnp INVALID_DISK
 
-
-; Disk is bootable. Copy the first 128 sectors into memory.
+; Disk is bootable. Copy disk sectors 0-3 (still track 0) into memory segments 1-4.
 COPY_LOADER:
 
-; Print a loading message
+; Print a loading message (PRINT_STRING returns to END_LOAD_MESSAGE)
 ASET 9
 LARl END_LOAD_MESSAGE
 SPUSH
@@ -190,7 +204,7 @@ END_LOAD_MESSAGE:
 
 ASET 1     ; Use $a1 to store the value of -4 (negative number of sectors we want to load)
 LARl 252    ; On a signed 8-bit machine, this is equivalent to -4.
-ASET 0     ; Use $a0 to store the sector currently being read from disk (the block being written to is this + 1)
+ASET 0     ; $a0 = the sector to read; after ADD 1 below, the segment to write it to
 AND 0
 LOADER_COPY_LOOP:
     ASET 0
@@ -198,6 +212,7 @@ LOADER_COPY_LOOP:
     ADD 1          ; Increment sector (this now points to the sector we are writing to in memory)
     ASET 3         ; Use $a3 as a counter for the inner copy loop which must run exactly 256 times (increment until it overflows back to zero)
     AND 0
+    ; Copy 0xFE00 + $a3 to ($a0 * 256) + $a3, through $a4
     COPY_SEGMENT_LOOP:
         STal                    ; Set sector local address
         ASET 15                 ; Set sector address to disk paging area
@@ -226,6 +241,8 @@ JMP
 ; Shared print routine.
 ; TTY must already be in line mode.
 ; Segment local return address must be on the stack.
+; It returns with SPOP / STal / JMP: $mr's high byte is still $a8 (0), so the
+; return lands in segment 0, and $mr is left pointing at the return address.
 ;
 ; $a8 - Segment number of string to print
 ; $a9 - Segment local address of string to print
@@ -253,7 +270,9 @@ PRINT_STRING:
     STal
     JMP
 
-; Halt the CPU
+; Halt the CPU: sleep, then jump back here forever.
+; It is only reached as PRINT_STRING's return address, which leaves $mr = HALT,
+; so the bare JMP loops.
 ;
 ; $a14 - The sleep delay to use in the busy loop
 ;

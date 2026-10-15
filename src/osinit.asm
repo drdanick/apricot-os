@@ -21,6 +21,7 @@
 #include "shell.asm"
 #include "memutil.asm"
 #include "faulthandler.asm"
+#include "fsdriver.asm"
 
 ;
 ; We need to place a fault handler at the end of non-reserved memory.
@@ -66,6 +67,10 @@ AND 0
 ASET 13
 OS_SYSCALL MEMUTIL_MEMCPY
 
+
+; Mount the filesystem on the boot disk
+ASET 8
+OS_SYSCALL FS_INIT
 
 ; Execute the shell
 OS_SYSJUMP SHELL_MAIN

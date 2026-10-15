@@ -28,61 +28,61 @@ x03  |   3 |
 x04  |   4 | OS register utilities
 x05  |   5 | Memory utilities
 x06  |   6 | Disk IO routines
-x07  |   7 | Disk Storage Allocation routines
+x07  |   7 | Disk storage allocation routines (space bitmap)
 x08  |   8 | Display routines
 x09  |   9 | Math utilities
-x0A  |  10 |
+x0A  |  10 | Math utilities
 x0B  |  11 | Shell memory allocations
-x0C  |  12 | Shell memory allocations
+x0C  |  12 | Shell memory allocations (strings)
 x0D  |  13 | Shell utilities
-x0E  |  14 | Shell command code
+x0E  |  14 | Shell command code (command headers)
 x0F  |  15 | Shell command code
-x0F  |  16 | Shell main code
-x10  |  17 | Filesystem driver
-x11  |  18 |
-x12  |  19 | Filesystem volume information paging area
-x13  |  20 | Filesystem bitmap paging area
-x15  |  21 |
-x16  |  22 |
-x17  |  23 |
-x18  |  24 |
-x19  |  25 |
-x1A  |  26 |
-x1B  |  27 |
-x1C  |  28 |
-x1D  |  29 |
-x1E  |  30 |
-x1F  |  31 |
-x20  |  32 |
-x21  |  33 |
-x22  |  34 |
-x23  |  35 |
-x24  |  36 |
-x25  |  37 |
-x26  |  38 |
-x27  |  39 |
-x28  |  40 |
-x29  |  41 |
-x2A  |  42 |
-x2B  |  43 |
-x2C  |  44 |
-x2D  |  45 |
-x2E  |  46 |
-x2F  |  47 |
-x30  |  48 |
-x31  |  49 |
-x32  |  50 |
-x33  |  51 |
-x34  |  52 |
-x35  |  53 |
-x36  |  54 |
-x37  |  55 |
-x38  |  56 |
-x39  |  57 |
-x3A  |  58 |
-x3B  |  59 |
-x3C  |  60 |
-x3D  |  61 |
+x10  |  16 | Shell main code
+x11  |  17 | Filesystem driver (mount, init)
+x12  |  18 | Filesystem driver (sector IO, format)
+x13  |  19 | Filesystem volume information paging area
+x14  |  20 | Filesystem bitmap paging area
+x15  |  21 | Filesystem directory routines
+x16  |  22 | Filesystem directory routines
+x17  |  23 | Filesystem working directory (CD)
+x18  |  24 | Filesystem working directory (PWD)
+x19  |  25 | Filesystem file reading (CAT)
+x1A  |  26 | Filesystem file reading
+x1B  |  27 | Filesystem shell commands
+x1C  |  28 | Filesystem shell commands (error messages)
+x1D  |  29 | Filesystem state and path stack
+x1E  |  30 | Filesystem directory buffer
+x1F  |  31 | Filesystem metadata buffer
+x20  |  32 | Filesystem data buffer
+x21  |  33 | Filesystem second metadata buffer (CP)
+x22  |  34 | Filesystem create (TOUCH, MKDIR)
+x23  |  35 | Filesystem WRITE
+x24  |  36 | Filesystem append
+x25  |  37 | Filesystem append helpers
+x26  |  38 | Filesystem append helpers
+x27  |  39 | Filesystem remove (RM)
+x28  |  40 | Filesystem remove helpers, argument parsing
+x29  |  41 | Filesystem rename (MV)
+x2A  |  42 | Filesystem copy (CP)
+x2B  |  43 | Filesystem copy
+x2C  |  44 | Filesystem copy helpers
+x2D  |  45 | Filesystem statistics (FSSTAT)
+x2E  |  46 | Filesystem statistics (FSSTAT)
+x2F  |  47 | Filesystem format (FORMAT)
+x30  |  48 | Filesystem format helpers
+x31  |  49 | Filesystem format helpers
+x32  |  50 | Disk commands (DISKSEL, strings)
+x33  |  51 | Disk commands (DISKSTAT)
+x34  |  52 | Filesystem entry info (STAT)
+x35  |  53 | Filesystem entry info (STAT)
+x36  |  54 | Filesystem entry info (STAT)
+x37  |  55 | Filesystem entry info (STAT, directories)
+x38  |  56 | Filesystem entry info (STAT, files)
+x39  |  57 | Filesystem entry info (STAT, files)
+x3A  |  58 | Filesystem entry info (STAT, block ranges)
+x3B  |  59 | Filesystem entry info (STAT, strings)
+x3C  |  60 | Filesystem entry info (STAT, strings)
+x3D  |  61 | Test program (memexec 3D00)
 x3E  |  62 |
 x3F  |  63 |
 x40  |  64 |
@@ -277,3 +277,8 @@ xFC  | 252 |
 xFD  | 253 | Runaway handler
 xFE  | 254 | [Disk paging space]
 xFF  | 255 | [Stack space]
+
+Notes:
+- Segments 1-61 are loaded from disk at boot. Code must live there.
+- Disk sectors 62 and 63 of track 0 hold the space bitmap and the volume
+  information, so no unit may use #segment 62 or higher.
